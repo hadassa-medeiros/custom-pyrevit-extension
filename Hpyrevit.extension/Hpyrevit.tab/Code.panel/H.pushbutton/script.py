@@ -1,5 +1,3 @@
-
-
 # from Autodesk.Revit.DB import *
 # it is the incorrect approach to load it ONCE YOU'RE USING IRONPYTHON (hence the error
 # OSError: IronPython.Runtime.Exceptions.OSException: cannot load library C:\Program Files\Autodesk\Revit 2023):
@@ -9,6 +7,7 @@
 import clr
 clr.AddReferenceToFileAndPath("C:\Program Files\Autodesk\Revit 2023\RevitAPI")
 # clr.AddReference("RevitAPI")
+
 from rpw import revit, db
 from rpw.ui.forms import (FlexForm, Label, ComboBox, TextBox, TextBox,Separator, Button, CheckBox)
 from rpw.ui.forms import select_file
@@ -17,8 +16,8 @@ import Autodesk.Revit as Revit
 element = Revit.DB.Element
 from rpw.db.xyz import XYZ
 
-# doc = Revit.UI.UIApplication.ActiveUIDocument
-doc = __revit__.ActiveUIDocument.Document
+doc = Revit.UI.UIApplication.ActiveUIDocument
+doc = revit.ActiveUIDocument.Document
 
 def create_elements_on_floors(element_type, parameters):
 
