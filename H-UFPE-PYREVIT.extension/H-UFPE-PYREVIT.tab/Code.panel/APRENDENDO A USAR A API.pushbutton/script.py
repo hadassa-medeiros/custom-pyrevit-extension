@@ -4,8 +4,10 @@ import Autodesk.Revit.DB as revit
 doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
-
 # tutorial parameteres:https://www.youtube.com/watch?v=YoLxucuC6Ss
+
+
+
 #ATÉ O FIM, DEMONSTRAÇAO DE QUE É POSSIVEL ACESSAR INFORMAÇAO OU POR UM ID DE OBJETO
 #JA CONHECIDO (wall_id) ou iterando por uma lista de objetos (all_walls)
 all_walls = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls)
@@ -14,7 +16,6 @@ materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory
 #     print(material.Name)
 #     print('O material se chama {} e está na categoria {}.'.format(material.Name, material.Category.Name))
     # print(material.IsValidObject)
-
 
 #aqui consegui acessar área como valor formatado no revit (...m²) de uma parede.
 parede_teste = doc.GetElement(revit.ElementId(358513))
@@ -30,9 +31,23 @@ for id_elemento_material_parede in ab:
     for material in materiais:
         if material.Id == id_elemento_material_parede:
             print('deu certo')
-            material_parede = material
+            mat_parede = material
+            cod_mat_parede = material.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK).AsValueString()
+            print(cod_mat_parede) #LOCALIZEI AQUI O CÓDIGO ESCRITO NO CAMPO NATIVO 'MARCA',DENTRO
+            # DE CADA MATERIAL.
             materiais_parede.append(material.Name)
-        print(materiais_parede)
+print(materiais_parede)
+
+
+
+# AGORA, ATRIBUIR O cod_mat_parede ao campo Acabamento da parede do ambienbte Hall 1(1º pavto) qd conseguir fazer
+# a condiçao p o ambiente certo ser localizado sem precisar informar qual ele é.
+
+
+
+
+
+
 #nao entendi porque mas isso abaixo retornou lista vazia. devia ter 3 materiais nela pq a parede
 #é composta por 3, conforme RevitLookup consultado dentro do projeto rvt.
 # get_mat_ids = parede_teste.GetMaterialIds(revit.ElementId(358513))
