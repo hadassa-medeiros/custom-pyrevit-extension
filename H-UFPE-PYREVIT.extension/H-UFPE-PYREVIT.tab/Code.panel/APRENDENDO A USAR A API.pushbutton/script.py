@@ -40,9 +40,14 @@ ambiente_hall = doc.GetElement(revit.ElementId(611306))
 
 #abaixo, ele encontrou o parametro compartilhado de revest de paredes no ambiente especificado.
 for a in ambiente_hall.Parameters:
+    id_param = a.Id
+    # print(id_param)
     nome_param = a.Definition.Name
     if nome_param == 'COD-REVEST_PAREDES':
         print(nome_param)
+        revest_parede = a
+        #abaixo, acessei o valor atribuído ao parametro compartilhado COD-REVEST_PAREDES:
+        print(a.AsValueString())
 
 
 
