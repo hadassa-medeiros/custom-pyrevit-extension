@@ -26,7 +26,6 @@ material_teste_MARCA = material_teste.get_Parameter(revit.BuiltInParameter.ALL_M
 
 ab = parede.GetMaterialIds(False)
 for id_elemento_material_parede in ab:
-    # print(id_elemento_material_parede)
     for material in materiais:
         if material.Id == id_elemento_material_parede:
             # print('deu certo')
@@ -38,33 +37,32 @@ for id_elemento_material_parede in ab:
 
 for wall in all_walls:
     id = wall.Id
-    nome_parede = wall.Name
-    print(nome_parede)
-    parede_elem = doc.GetElement(revit.ElementId(414))
-    # camadas = parede_elem.GetCompoundStructure
-    #PRA O LOOKUP FUNCIONAR NESSE CASO ONDE ELE ITERA POR TODAS, VOU TER QUE USAR ERROR HANDLING PRA
-    #QUANDO ELE SE DEPARAR COM PAREDES QUE POR ALGUMA RAZÃO TENHAM VALOR NULO NESSE PARAMETRO 'ÁREA'
-    #OU ERROR HANDLING (IMAGINO QUE SEJA A FORMA MAIS ELEGANTE/EM CONFOMRIDADE COM BOAS PRÁTICAS) OU
-    #CRIAR UM IF/CONDIÇAO P Q ELE SO ACESSE/PRINTE O PARAMETRO ÁREA DAS PAREDES Q TENHAM ESSE PARAMETRO, NE
-    # print(area_parede.AsValueString())
-#     print(wall.Id)
-    # for p in wall.Parameters:
-    #     # print(p.Definition.Name)
-    #     wall_c = wall.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
-    #     print(wall_c.AsString())
-    # print(wall.Name) #nao funciona!! nao faz sentido pq Name é um mebro (DO TIPO eLEMENT) DA wALLtYPE
+    nome_parede = wall.ToString()
+    parede_elem = doc.GetElement(nome_parede)
 
-    # wall_id = doc.GetElement(revit.Element('ALVENARIA 25cm'))
-    # print(wall_id)
+print(type(parede_elem))
+
+#     camadas = parede_elem.GetCompoundStructure
+#     PRA O LOOKUP FUNCIONAR NESSE CASO ONDE ELE ITERA POR TODAS, VOU TER QUE USAR ERROR HANDLING PRA
+#     QUANDO ELE SE DEPARAR COM PAREDES QUE POR ALGUMA RAZÃO TENHAM VALOR NULO NESSE PARAMETRO 'ÁREA'
+#     OU ERROR HANDLING (IMAGINO QUE SEJA A FORMA MAIS ELEGANTE/EM CONFOMRIDADE COM BOAS PRÁTICAS) OU
+#     CRIAR UM IF/CONDIÇAO P Q ELE SO ACESSE/PRINTE O PARAMETRO ÁREA DAS PAREDES Q TENHAM ESSE PARAMETRO, NE
+#     print(area_parede.AsValueString())
+#     print(wall.Id)
+#     for p in wall.Parameters:
+#         # print(p.Definition.Name)
+#         wall_c = wall.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
+#         print(wall_c.AsString())
+#     print(wall.Name) #nao funciona!! nao faz sentido pq Name é um mebro (DO TIPO eLEMENT) DA wALLtYPE
+#
+#     wall_id = doc.GetElement(revit.Element('ALVENARIA 25cm'))
+#
 # print(list(wall_id.Parameters))
 # for p in wall_id.Parameters:
-    #     print('\n{}'.format(p.Definition.Name))
-    #     print(p.Definition.BuiltInParameter)
-    #     print(p.IsReadOnly)
-    #     print(p.StorageType)
-
-wall_c = wall_id.get_Parameter(revit.BuiltInParameter.ELEM_TYPE_PARAM)
-# print(wall_c.AsValueString())
+#         print('\n{}'.format(p.Definition.Name))
+#         print(p.Definition.BuiltInParameter)
+#         print(p.IsReadOnly)
+#         print(p.StorageType)
 
 ambiente_hall = doc.GetElement(revit.ElementId(611306))
 #ABAIXO, NAO CONSEGUI USAR ESSE METODO LOOKUPPARAMETER
