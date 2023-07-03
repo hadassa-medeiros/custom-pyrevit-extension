@@ -48,7 +48,9 @@ for a in ambiente_hall.Parameters:
         revest_parede = a
         #abaixo, acessei o valor atribuído ao parametro compartilhado COD-REVEST_PAREDES:
         print(a.AsValueString())
-
+        for material in materiais:
+            if material.Name == revest_parede.AsValueString():
+                print('achou')
 
 
 # rev_parede_hall = ambiente_hall.get_Parameter(revit.)
