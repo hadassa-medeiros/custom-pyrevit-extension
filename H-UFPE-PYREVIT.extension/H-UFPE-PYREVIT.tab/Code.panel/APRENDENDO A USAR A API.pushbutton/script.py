@@ -15,9 +15,16 @@ parede_teste = doc.GetElement(revit.ElementId(358513))
 print((parede_teste.LookupParameter('Área')).AsValueString())
 
 # mas quero pegar o material atribuido a essa parede.
-get_mat_ids = parede_teste.GetMaterialIds(revit.ElementId(358513))
-print(get_mat_ids.AsValueString())
 
+
+#nao entendi porque mas isso abaixo retornou lista vazia. devia ter 3 materiais nela pq a parede
+#é composta por 3, conforme RevitLookup consultado dentro do projeto rvt.
+# get_mat_ids = parede_teste.GetMaterialIds(revit.ElementId(358513))
+# print(list(get_mat_ids))
+
+#já o metodo GetMaterialVOlume deu certo com essa sintaxe (passei o id de Tijolo Comum so pra testar
+# e ele retornou sim um avalor de área no terminal.
+print(parede_teste.GetMaterialVolume(revit.ElementId(24)).Key)
 
 for wall in all_walls:
     material_parede = wall.LookupParameter('Área')
