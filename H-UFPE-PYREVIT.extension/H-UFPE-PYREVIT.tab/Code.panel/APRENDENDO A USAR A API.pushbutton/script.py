@@ -7,13 +7,17 @@ app = __revit__.Application
 
 # tutorial parameteres:https://www.youtube.com/watch?v=YoLxucuC6Ss
 wall_id = doc.GetElement(revit.ElementId(335641))
-print(list(wall_id.Parameters))
+# print(list(wall_id.Parameters))
 
-for p in wall_id.Parameters:
-    print('\n{}'.format(p.Definition.Name))
-    print(p.Definition.BuiltInParameter)
-    print(p.IsReadOnly)
-    print(p.StorageType)
+# for p in wall_id.Parameters:
+#     print('\n{}'.format(p.Definition.Name))
+#     print(p.Definition.BuiltInParameter)
+#     print(p.IsReadOnly)
+#     print(p.StorageType)
+
+print(wall_id.GetMaterialIds.Id)
+
+
 
 
 # area_tags = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_AreaTags).ToElements()
