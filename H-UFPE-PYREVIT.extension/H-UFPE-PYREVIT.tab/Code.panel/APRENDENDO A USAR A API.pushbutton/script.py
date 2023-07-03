@@ -10,7 +10,17 @@ app = __revit__.Application
 #JA CONHECIDO (wall_id) ou iterando por uma lista de objetos (all_walls)
 all_walls = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls)
 
-# for wall in all_walls:
+#aqui consegui acessar área como valor formatado no revit (...m²) de uma parede.
+parede_teste = doc.GetElement(revit.ElementId(358513))
+print((parede_teste.LookupParameter('Área')).AsValueString())
+
+for wall in all_walls:
+    material_parede = wall.LookupParameter('Área')
+    #PRA O LOOKUP FUNCIONAR NESSE CASO ONDE ELE ITERA POR TODAS, VOU TER QUE USAR ERROR HANDLING PRA
+    #QUANDO ELE SE DEPARAR COM PAREDES QUE POR ALGUMA RAZÃO TENHAM VALOR NULO NESSE PARAMETRO 'ÁREA'
+    #OU ERROR HANDLING (IMAGINO QUE SEJA A FORMA MAIS ELEGANTE/EM CONFOMRIDADE COM BOAS PRÁTICAS) OU
+    #CRIAR UM IF/CONDIÇAO P Q ELE SO ACESSE/PRINTE O PARAMETRO ÁREA DAS PAREDES Q TENHAM ESSE PARAMETRO, NE
+    # print(material_parede.AsValueString())
 #     print(wall.Id)
     # for p in wall.Parameters:
     #     # print(p.Definition.Name)
@@ -36,6 +46,7 @@ wall_c = wall_id.get_Parameter(revit.BuiltInParameter.ELEM_TYPE_PARAM)
 print(wall_c.AsValueString()) #asvaluestring funciona, asstring nao funciona.
 
 ambiente_hall = doc.GetElement(revit.ElementId(611306))
+#ABAIXO, NAO CONSEGUI USAR ESSE METODO LOOKUPPARAMETER
 # print(ambiente_hall.LookUpParameter('COD-REVEST_PAREDES'))
 
 #abaixo, ele encontrou o parametro compartilhado de revest de paredes no ambiente especificado.
@@ -50,10 +61,8 @@ for a in ambiente_hall.Parameters:
         print(a.AsValueString())
         for material in materiais:
             if material.Name == revest_parede.AsValueString():
-                print('achou')
-
-
-# rev_parede_hall = ambiente_hall.get_Parameter(revit.)
+                print('achou') #ele identificou aqui dentre todos os materiais presentes no projeto,
+                #armazenados na variavel materiais, aquele encontrado no objeto ambiente_hall.
 
 
 
