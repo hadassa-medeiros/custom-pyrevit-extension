@@ -14,6 +14,11 @@ all_walls = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory
 parede_teste = doc.GetElement(revit.ElementId(358513))
 print((parede_teste.LookupParameter('Área')).AsValueString())
 
+# mas quero pegar o material atribuido a essa parede.
+get_mat_ids = parede_teste.GetMaterialIds(revit.ElementId(358513))
+print(get_mat_ids.AsValueString())
+
+
 for wall in all_walls:
     material_parede = wall.LookupParameter('Área')
     #PRA O LOOKUP FUNCIONAR NESSE CASO ONDE ELE ITERA POR TODAS, VOU TER QUE USAR ERROR HANDLING PRA
@@ -44,6 +49,9 @@ wall_id = doc.GetElement(revit.ElementId(343830))
 
 wall_c = wall_id.get_Parameter(revit.BuiltInParameter.ELEM_TYPE_PARAM)
 print(wall_c.AsValueString()) #asvaluestring funciona, asstring nao funciona.
+
+
+
 
 ambiente_hall = doc.GetElement(revit.ElementId(611306))
 #ABAIXO, NAO CONSEGUI USAR ESSE METODO LOOKUPPARAMETER
