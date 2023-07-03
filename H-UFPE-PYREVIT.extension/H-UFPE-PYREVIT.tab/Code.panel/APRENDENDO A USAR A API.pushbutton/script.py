@@ -9,14 +9,30 @@ app = __revit__.Application
 #ATÉ O FIM, DEMONSTRAÇAO DE QUE É POSSIVEL ACESSAR INFORMAÇAO OU POR UM ID DE OBJETO
 #JA CONHECIDO (wall_id) ou iterando por uma lista de objetos (all_walls)
 all_walls = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls)
+materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials)
+# for material in materiais:
+#     print(material.Name)
+#     print('O material se chama {} e está na categoria {}.'.format(material.Name, material.Category.Name))
+    # print(material.IsValidObject)
+
 
 #aqui consegui acessar área como valor formatado no revit (...m²) de uma parede.
 parede_teste = doc.GetElement(revit.ElementId(358513))
 print((parede_teste.LookupParameter('Área')).AsValueString())
-
+materiais_parede = []
 # mas quero pegar o material atribuido a essa parede.
-
-
+#CONSEGUIIIIIIIII PASSANDO O ARGUMENTO FALSE ELE MOSTRA QUE NAQUELA PAREDE EXISTEM OS 3MATERIAIS. (COM O
+#ARGUMENTO TRUE ELE NAO "ENCONTROU" NADA, APENAS AQUELA LISTA VAZIA QUE ENCONTREI NAS TENTATIVAS PRÉVIAS.
+ab = parede_teste.GetMaterialIds(False)
+print(ab)
+for id_elemento_material_parede in ab:
+    print(id_elemento_material_parede)
+    for material in materiais:
+        if material.Id == id_elemento_material_parede:
+            print('deu certo')
+            material_parede = material
+            materiais_parede.append(material.Name)
+        print(materiais_parede)
 #nao entendi porque mas isso abaixo retornou lista vazia. devia ter 3 materiais nela pq a parede
 #é composta por 3, conforme RevitLookup consultado dentro do projeto rvt.
 # get_mat_ids = parede_teste.GetMaterialIds(revit.ElementId(358513))
@@ -24,27 +40,21 @@ print((parede_teste.LookupParameter('Área')).AsValueString())
 
 #já o metodo GetMaterialVOlume deu certo com essa sintaxe (passei o id de Tijolo Comum so pra testar
 # e ele retornou sim um avalor de área no terminal.
-print(parede_teste.GetMaterialVolume(revit.ElementId(24)).Key)
+print(parede_teste.GetMaterialVolume(revit.ElementId(24)))
 
 for wall in all_walls:
-    material_parede = wall.LookupParameter('Área')
+    area_parede = wall.LookupParameter('Área')
     #PRA O LOOKUP FUNCIONAR NESSE CASO ONDE ELE ITERA POR TODAS, VOU TER QUE USAR ERROR HANDLING PRA
     #QUANDO ELE SE DEPARAR COM PAREDES QUE POR ALGUMA RAZÃO TENHAM VALOR NULO NESSE PARAMETRO 'ÁREA'
     #OU ERROR HANDLING (IMAGINO QUE SEJA A FORMA MAIS ELEGANTE/EM CONFOMRIDADE COM BOAS PRÁTICAS) OU
     #CRIAR UM IF/CONDIÇAO P Q ELE SO ACESSE/PRINTE O PARAMETRO ÁREA DAS PAREDES Q TENHAM ESSE PARAMETRO, NE
-    # print(material_parede.AsValueString())
+    # print(area_parede.AsValueString())
 #     print(wall.Id)
     # for p in wall.Parameters:
     #     # print(p.Definition.Name)
     #     wall_c = wall.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
     #     print(wall_c.AsString())
     # print(wall.Name) #nao funciona!! nao faz sentido pq Name é um mebro (DO TIPO eLEMENT) DA wALLtYPE
-
-materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials)
-# for material in materiais:
-#     print(material.Name)
-#     print('O material se chama {} e está na categoria {}.'.format(material.Name, material.Category.Name))
-    # print(material.IsValidObject)
 
 wall_id = doc.GetElement(revit.ElementId(343830))
 # print(list(wall_id.Parameters))
