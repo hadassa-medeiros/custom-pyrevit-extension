@@ -32,7 +32,7 @@ print(lista_materiais)
 for piso in pisos:
     print(piso.GetMaterialIds)
     print(piso.GetType())
-
+    print(piso.)
     # revest = rvt.Element.GetMaterialIds(piso, pisos)
     # a = piso.GetMaterialIds(pisos)  NAO FUNCIONA.
 
