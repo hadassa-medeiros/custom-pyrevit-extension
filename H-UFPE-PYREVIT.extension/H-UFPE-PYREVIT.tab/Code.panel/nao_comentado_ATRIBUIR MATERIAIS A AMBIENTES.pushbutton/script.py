@@ -6,9 +6,9 @@ uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 
 all_walls = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls)
-all_walls = all_walls.WhereElementIsNotElementType()
+all_walls_instances = all_walls.WhereElementIsNotElementType()
 materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials)
-
+estrutura = all_walls.CompoundStructure
 ambiente = doc.GetElement(revit.ElementId(611306))
 parede = doc.GetElement(revit.ElementId(358513))
 
@@ -35,14 +35,17 @@ for id_elemento_material_parede in ab:
             # print(cod_mat_parede) #LOCALIZEI AQUI O CÓDIGO ESCRITO NO CAMPO NATIVO 'MARCA',DENTRO
             # DE CADA MATERIAL.
 
-for wall in all_walls:
+for wall in all_walls_instances:
     id = wall.Id
-    nome_parede = wall.ToString()
-    parede_elem = doc.GetElement(nome_parede)
+    nome_parede = wall.Name
+    parede_elem = doc.GetElement(id)
 
-print(type(parede_elem))
+    # print(type(parede_elem))
 
-#     camadas = parede_elem.GetCompoundStructure
+camadas = doc.GetElement(revit.ElementId(1977638)).CompoundStructure
+print(list(camadas.GetLayers()))
+
+
 #     PRA O LOOKUP FUNCIONAR NESSE CASO ONDE ELE ITERA POR TODAS, VOU TER QUE USAR ERROR HANDLING PRA
 #     QUANDO ELE SE DEPARAR COM PAREDES QUE POR ALGUMA RAZÃO TENHAM VALOR NULO NESSE PARAMETRO 'ÁREA'
 #     OU ERROR HANDLING (IMAGINO QUE SEJA A FORMA MAIS ELEGANTE/EM CONFOMRIDADE COM BOAS PRÁTICAS) OU
