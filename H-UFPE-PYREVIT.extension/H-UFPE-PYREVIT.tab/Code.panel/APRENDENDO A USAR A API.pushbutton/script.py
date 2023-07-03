@@ -32,30 +32,54 @@ for id_elemento_material_parede in ab:
         if material.Id == id_elemento_material_parede:
             print('deu certo')
             mat_parede = material
-            cod_mat_parede = material.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK).AsValueString()
+            cod_mat_parede = material.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK)
+            cod_mat_parede_str = material.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK).AsValueString()
             print(cod_mat_parede) #LOCALIZEI AQUI O CÓDIGO ESCRITO NO CAMPO NATIVO 'MARCA',DENTRO
             # DE CADA MATERIAL.
             materiais_parede.append(material.Name)
 print(materiais_parede)
-
-
+print(cod_mat_parede_str)
 
 # AGORA, ATRIBUIR O cod_mat_parede ao campo Acabamento da parede do ambienbte Hall 1(1º pavto) qd conseguir fazer
 # a condiçao p o ambiente certo ser localizado sem precisar informar qual ele é.
+ambiente_HALL_teste = doc.GetElement(revit.ElementId(611306))
+
+acabam_da_parede = ambiente_HALL_teste.get_Parameter(revit.BuiltInParameter.ROOM_FINISH_WALL)
+
+CODREVEST_PAREDES = ambiente_HALL_teste.LookupParameter('COD-REVEST_PAREDES')
+print(type(CODREVEST_PAREDES))
+
+try:
+    print(CODREVEST_PAREDES.AsValueString())
+except AttributeError:
+    print('ops nada escrito aqui')
+
+acabam_da_parede_str = ambiente_HALL_teste.get_Parameter(revit.BuiltInParameter.ROOM_FINISH_WALL).AsValueString()
+
+material_teste = doc.GetElement(revit.ElementId(414))
+material_teste_ID = material_teste.Id
+nome_material_teste = material_teste.Name
+
+cod_material_teste = material_teste.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK)
+print(cod_material_teste.AsValueString())
 
 
-
-
-
+t = revit.Transaction(doc, "aplicar cod revest a ambiente")
+t.Start()
+# acabam_da_parede.Set(CODREVEST_PAREDE.AsValueString())
+CODREVEST_PAREDES.Set(material_teste_ID)
+t.Commit()
 
 #nao entendi porque mas isso abaixo retornou lista vazia. devia ter 3 materiais nela pq a parede
 #é composta por 3, conforme RevitLookup consultado dentro do projeto rvt.
 # get_mat_ids = parede_teste.GetMaterialIds(revit.ElementId(358513))
 # print(list(get_mat_ids))
 
+
 #já o metodo GetMaterialVOlume deu certo com essa sintaxe (passei o id de Tijolo Comum so pra testar
 # e ele retornou sim um avalor de área no terminal.
-print(parede_teste.GetMaterialVolume(revit.ElementId(24)))
+# print(parede_teste.GetMaterialVolume(revit.ElementId(24)))
+
 
 for wall in all_walls:
     area_parede = wall.LookupParameter('Área')
