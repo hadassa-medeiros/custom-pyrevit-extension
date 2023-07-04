@@ -17,14 +17,18 @@ for walltype in tipos_parede:
     if nome_tipo.AsString() != 'Parede cortina':
         estrutura_parede = revit.HostObjAttributes.GetCompoundStructure(walltype)
         quant_camadas_parede = estrutura_parede.LayerCount
-        camadas_estrutura_parede = revit.HostObjAttributes.GetCompoundStructure(walltype).GetLayers()
+        print(quant_camadas_parede)
+        camadas_estrutura_parede = estrutura_parede.GetLayers()
         for camada in camadas_estrutura_parede:
             funcao_camada = camada.Function
-            funcao_camada_str = funcao_camada.ToString()
-            if camada.Function.ToString() == 'Finish2':
-                id_material_camada = int(camada.MaterialId.ToString())
-            # pegar o objeto Material a partir do id localizado na camada de revestimento Finish2 interna
-                material_teste = doc.GetElement(revit.ElementId(id_material_camada))
+            # print(type(funcao_camada)) # o tipo aqui é 'MaterialFunctionAssignment', nativo Revit API
+            funcao_camada_str = funcao_camada.ToString() #pro tipo da variável virar string obviamente
+            if camada.Function.ToString() == 'Finish2' and camada.LayerId == 4:
+                id_revest = int(camada.MaterialId.ToString())
+            # acessar objeto Material (type Material contendo todas as infos)
+            # dentre a lista completa de Materiais no projeto a partir do id do mat. atribuído à camada
+                # de revestimento Finish2 interna
+                material_teste = doc.GetElement(revit.ElementId(id_revest))
                 print(material_teste.Name)
             # material_teste_ID = material_teste.Id
             # nome_material_teste_NOME = material_teste.Name
@@ -35,7 +39,6 @@ for walltype in tipos_parede:
 
         # print(revestimentos_coletados)
 
-        # revestimentos_coletados = [material.Name for material in materiais if material.Id == id_material_camada]
 
 # ambiente_testando = doc.GetElement(revit.ElementId(611306))
 # parede_testando = doc.GetElement(revit.ElementId(358513))
@@ -115,3 +118,5 @@ for walltype in tipos_parede:
 #     id = walltype.Id
 #     titulo_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
 #     print(titulo_tipo.AsString())
+
+# revestimentos_coletados = [material.Name for material in materiais if material.Id == id_material_camada]
