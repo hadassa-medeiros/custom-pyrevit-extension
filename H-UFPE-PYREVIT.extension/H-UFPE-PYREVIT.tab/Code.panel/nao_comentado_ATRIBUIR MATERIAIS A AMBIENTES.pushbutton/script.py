@@ -4,21 +4,21 @@ doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 
-
 materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials).ToElements()
 ambientes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Rooms).ToElements()
 all_walls = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsNotElementType()
 all_walls_list = all_walls.ToElements()
-tipos_parede = all_walls.WhereElementIsElementType().ToElements()
+tipos_parede =  revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsElementType().ToElements()
     # parede.CompoundStructure.GetLayers()
-#
 for walltype in tipos_parede:
     id = walltype.Id
     print(id)
-    titulo_tipo = walltype.get_Parameter(revit.BuiltInParameter.ELEM_TYPE_LABEL)
-    print(titulo_tipo)
-    a = revit.HostObjAttributes.GetCompoundStructure(walltype)
-    print(type(a))
+    titulo_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
+    print(titulo_tipo.AsString())
+    if type(walltype) == 'NoneType':
+        print('ops')
+        # a = revit.HostObjAttributes.GetCompoundStructure(walltype)
+        # print(a.EndCap())
     # print(a)
     # atributos_hospedeiro_parede = wall.HostObjAttributes()
 
