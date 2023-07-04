@@ -11,20 +11,31 @@ all_walls_list = all_walls.ToElements()
 tipos_parede =  revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsElementType().ToElements()
     # parede.CompoundStructure.GetLayers()
 for walltype in tipos_parede:
-    id = walltype.GetParameters('HasPhases')
-    print(id)
-    titulo_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
+    wall_id = walltype.Id
+    nome_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
     # print(titulo_tipo.AsString())
-    if titulo_tipo.AsString() != 'Parede cortina':
+    if nome_tipo.AsString() != 'Parede cortina':
         estrutura_parede = revit.HostObjAttributes.GetCompoundStructure(walltype)
         quant_camadas_parede = estrutura_parede.LayerCount
         camadas_estrutura_parede = revit.HostObjAttributes.GetCompoundStructure(walltype).GetLayers()
         for camada in camadas_estrutura_parede:
-            funcao_camada_parede = camada.Function
-            funcao_camada_parede_string = funcao_camada_parede.ToString()
-            print(camada.MaterialId)
+            funcao_camada = camada.Function
+            funcao_camada_str = funcao_camada.ToString()
             if camada.Function.ToString() == 'Finish2':
-                print('ok')
+                id_material_camada = int(camada.MaterialId.ToString())
+            # pegar o objeto Material a partir do id localizado na camada de revestimento Finish2 interna
+                material_teste = doc.GetElement(revit.ElementId(id_material_camada))
+                print(material_teste.Name)
+            # material_teste_ID = material_teste.Id
+            # nome_material_teste_NOME = material_teste.Name
+            # for material in materiais:
+            #     if material.Id == camada.MaterialId:
+            #     revest = material
+            #     print(material.Name)
+
+        # print(revestimentos_coletados)
+
+        # revestimentos_coletados = [material.Name for material in materiais if material.Id == id_material_camada]
 
 # ambiente_testando = doc.GetElement(revit.ElementId(611306))
 # parede_testando = doc.GetElement(revit.ElementId(358513))
