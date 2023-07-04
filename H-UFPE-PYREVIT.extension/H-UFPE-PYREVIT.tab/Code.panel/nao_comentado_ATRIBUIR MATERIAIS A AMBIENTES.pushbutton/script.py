@@ -5,14 +5,22 @@ doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 
+materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials)
+ambientes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Rooms)
 all_walls = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls)
 all_walls_instances = all_walls.WhereElementIsNotElementType()
-materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials)
-estrutura = all_walls.CompoundStructure
-ambiente = doc.GetElement(revit.ElementId(611306))
-parede = doc.GetElement(revit.ElementId(358513))
+all_walls_types = all_walls.WhereElementIsElementType()
+for wall in all_walls:
+    id = wall.Id
+    print(id)
+    nome_parede = wall.Name
+    parede_elem = doc.GetElement(id)
+    print(parede_elem)
 
-CODREVEST_PAREDES = ambiente.LookupParameter('COD-REVEST_PAREDES')
+ambiente_testando = doc.GetElement(revit.ElementId(611306))
+parede_testando = doc.GetElement(revit.ElementId(358513))
+
+CODREVEST_PAREDES = ambiente_testando.LookupParameter('COD-REVEST_PAREDES')
 
 material_teste = doc.GetElement(revit.ElementId(414))
 material_teste_ID = material_teste.Id
@@ -23,10 +31,10 @@ material_teste_MARCA = material_teste.get_Parameter(revit.BuiltInParameter.ALL_M
 # t.Start()
 # CODREVEST_PAREDES.Set(material_teste_ID)
 # t.Commit()
-
-ab = parede.GetMaterialIds(False)
+ab = parede_testando.GetMaterialIds(False)
 for id_elemento_material_parede in ab:
     for material in materiais:
+        print(material)
         if material.Id == id_elemento_material_parede:
             # print('deu certo')
             mat_parede = material
@@ -35,15 +43,9 @@ for id_elemento_material_parede in ab:
             # print(cod_mat_parede) #LOCALIZEI AQUI O CÓDIGO ESCRITO NO CAMPO NATIVO 'MARCA',DENTRO
             # DE CADA MATERIAL.
 
-for wall in all_walls_instances:
-    id = wall.Id
-    nome_parede = wall.Name
-    parede_elem = doc.GetElement(id)
 
-    # print(type(parede_elem))
-
-camadas = doc.GetElement(revit.ElementId(1977638)).CompoundStructure
-print(list(camadas.GetLayers()))
+# camadas = doc.GetElement(revit.ElementId(1977638)).CompoundStructure
+# print(list(camadas.GetLayers()))
 
 
 #     PRA O LOOKUP FUNCIONAR NESSE CASO ONDE ELE ITERA POR TODAS, VOU TER QUE USAR ERROR HANDLING PRA
@@ -72,27 +74,17 @@ ambiente_hall = doc.GetElement(revit.ElementId(611306))
 # print(ambiente_hall.LookUpParameter('COD-REVEST_PAREDES'))
 
 #abaixo, ele encontrou o parametro compartilhado de revest de paredes no ambiente especificado.
-for a in ambiente_hall.Parameters:
-    id_param = a.Id
-    # print(id_param)
-    nome_param = a.Definition.Name
+for parametro in ambiente_hall.Parameters:
+    id_param = parametro.Id
+    print(id_param)
+    nome_param = parametro.Definition.Name
+    print(nome_param)
     if nome_param == 'COD-REVEST_PAREDES':
-        revest_parede = a
+        revest_parede = parametro
+        print('aqui,{}'.format(revest_parede.AsValueString()))
         #abaixo, acessei o valor atribuído ao parametro compartilhado COD-REVEST_PAREDES:
-        print(a.AsValueString())
+        print(parametro.AsValueString())
         for material in materiais:
             if material.Name == revest_parede.AsValueString():
                 print('achou') #ele identificou aqui dentre todos os materiais presentes no projeto,
                 #armazenados na variavel materiais, aquele encontrado no objeto ambiente_hall.
-
-
-#FIM
-#---------------------------------------------------------------------------
-
-# area_tags = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_AreaTags).ToElements()
-# print(area_tags)
-# all_furniture = revit.FilteredElementCollector(doc)
-# all_furniture.OfCategory(revit.BuiltInCategory.OST_Furniture)
-# all_furniture.WhereElementIsNotElementType()
-# all_furniture.ToElements()
-# print(all_furniture)
