@@ -6,10 +6,26 @@ app = __revit__.Application
 
 materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials).ToElements()
 ambientes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Rooms).ToElements()
-all_walls = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsNotElementType()
-all_walls_list = all_walls.ToElements()
+instancias_paredes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsNotElementType()
+instancias_paredes_list = instancias_paredes.ToElements()
 tipos_parede =  revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsElementType().ToElements()
     # parede.CompoundStructure.GetLayers()
+
+wall_a_partir_de_id = doc.GetElement(revit.ElementId(343830))
+bbox_wall = wall_a_partir_de_id.get_BoundingBox(doc.ActiveView).Max
+print('As coordenadas XYZ da bounding box de {} (elemento da categoria {}) são: {}.'.format(wall_a_partir_de_id.Name, wall_a_partir_de_id.Category.Name, bbox_wall)) #posiçao X,Y e Z respectivamente (índices 0 a 2)
+#fazer o mesmo procedimento agora para um piso:
+#agora para ambiente:
+ambiente_test = doc.GetElement(revit.ElementId(1123259))
+# nome = ambiente_test.Name.Value #DUVIDA: não entendi pq o atributo Name nao pega aqui mas pegou p ver o nome da parede.
+bbox_ambiente = ambiente_test.get_BoundingBox(doc.ActiveView).Max
+print('As coordenadas XYZ da bounding box do elemento ID {} (categoria {}) são: {}.'.format(ambiente_test.Id, ambiente_test.Category.Name, bbox_ambiente))
+
+
+#descobrir como usar o metodo
+
+
+
 for walltype in tipos_parede:
     wall_id = walltype.Id
     nome_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
@@ -23,7 +39,8 @@ for walltype in tipos_parede:
             funcao_camada = camada.Function
             # print(type(funcao_camada)) # o tipo aqui é 'MaterialFunctionAssignment', nativo Revit API
             funcao_camada_str = funcao_camada.ToString() #pro tipo da variável virar string obviamente
-            if camada.Function.ToString() == 'Finish2' and camada.LayerId == 4:
+            if camada.Function.ToString() == 'Finish2' and camada.LayerId == 4: #uma forma de double check: tanto q a camada da parede é de fato de revestimento tipo Acabamento2 (a última na hierarquia),
+                #como que se trata da camada mais interna da parede, que faceia o ambiente interno que ela delimita.(
                 id_revest = int(camada.MaterialId.ToString())
             # acessar objeto Material (type Material contendo todas as infos)
             # dentre a lista completa de Materiais no projeto a partir do id do mat. atribuído à camada
@@ -120,3 +137,11 @@ for walltype in tipos_parede:
 #     print(titulo_tipo.AsString())
 
 # revestimentos_coletados = [material.Name for material in materiais if material.Id == id_material_camada]
+
+
+# wall_a_partir_de_id = doc.GetElement(revit.ElementId(343830))
+# bbox_wall = wall_a_partir_de_id.get_BoundingBox(doc.ActiveView).Max
+# print(bbox_wall[0], bbox_wall[1], bbox_wall[2]) #posiçao X,Y e Z respectivamente (índices 0 a 2)
+# print(type(bbox_wall[0])) #é float.
+# for position in bbox_wall:
+#     print(position)
