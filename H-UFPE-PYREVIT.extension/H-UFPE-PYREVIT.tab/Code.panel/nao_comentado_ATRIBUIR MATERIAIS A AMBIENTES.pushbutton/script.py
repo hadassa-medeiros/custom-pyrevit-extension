@@ -21,7 +21,6 @@ ambiente_testando = doc.GetElement(revit.ElementId(611306))
 parede_testando = doc.GetElement(revit.ElementId(358513))
 
 CODREVEST_PAREDES = ambiente_testando.LookupParameter('COD-REVEST_PAREDES')
-print(CODREVEST_PAREDES)
 material_teste = doc.GetElement(revit.ElementId(414))
 material_teste_ID = material_teste.Id
 nome_material_teste_NOME = material_teste.Name
@@ -32,9 +31,10 @@ material_teste_MARCA = material_teste.get_Parameter(revit.BuiltInParameter.ALL_M
 # CODREVEST_PAREDES.Set(material_teste_ID)
 # t.Commit()
 ab = parede_testando.GetMaterialIds(False)
+print(ab)
 for id_elemento_material_parede in ab:
     for material in materiais:
-        print(material)
+        # print(material.Name)
         if material.Id == id_elemento_material_parede:
             # print('deu certo')
             mat_parede = material
