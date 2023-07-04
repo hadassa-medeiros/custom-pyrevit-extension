@@ -21,7 +21,7 @@ ambiente_testando = doc.GetElement(revit.ElementId(611306))
 parede_testando = doc.GetElement(revit.ElementId(358513))
 
 CODREVEST_PAREDES = ambiente_testando.LookupParameter('COD-REVEST_PAREDES')
-
+print(CODREVEST_PAREDES)
 material_teste = doc.GetElement(revit.ElementId(414))
 material_teste_ID = material_teste.Id
 nome_material_teste_NOME = material_teste.Name
@@ -43,10 +43,8 @@ for id_elemento_material_parede in ab:
             # print(cod_mat_parede) #LOCALIZEI AQUI O CÓDIGO ESCRITO NO CAMPO NATIVO 'MARCA',DENTRO
             # DE CADA MATERIAL.
 
-
 # camadas = doc.GetElement(revit.ElementId(1977638)).CompoundStructure
 # print(list(camadas.GetLayers()))
-
 
 #     PRA O LOOKUP FUNCIONAR NESSE CASO ONDE ELE ITERA POR TODAS, VOU TER QUE USAR ERROR HANDLING PRA
 #     QUANDO ELE SE DEPARAR COM PAREDES QUE POR ALGUMA RAZÃO TENHAM VALOR NULO NESSE PARAMETRO 'ÁREA'
@@ -60,31 +58,25 @@ for id_elemento_material_parede in ab:
 #         print(wall_c.AsString())
 #     print(wall.Name) #nao funciona!! nao faz sentido pq Name é um mebro (DO TIPO eLEMENT) DA wALLtYPE
 #
-#     wall_id = doc.GetElement(revit.Element('ALVENARIA 25cm'))
-#
+
+
 # print(list(wall_id.Parameters))
 # for p in wall_id.Parameters:
 #         print('\n{}'.format(p.Definition.Name))
-#         print(p.Definition.BuiltInParameter)
-#         print(p.IsReadOnly)
-#         print(p.StorageType)
-
-ambiente_hall = doc.GetElement(revit.ElementId(611306))
-#ABAIXO, NAO CONSEGUI USAR ESSE METODO LOOKUPPARAMETER
-# print(ambiente_hall.LookUpParameter('COD-REVEST_PAREDES'))
-
-#abaixo, ele encontrou o parametro compartilhado de revest de paredes no ambiente especificado.
-for parametro in ambiente_hall.Parameters:
-    id_param = parametro.Id
-    print(id_param)
-    nome_param = parametro.Definition.Name
-    print(nome_param)
-    if nome_param == 'COD-REVEST_PAREDES':
-        revest_parede = parametro
-        print('aqui,{}'.format(revest_parede.AsValueString()))
-        #abaixo, acessei o valor atribuído ao parametro compartilhado COD-REVEST_PAREDES:
-        print(parametro.AsValueString())
-        for material in materiais:
-            if material.Name == revest_parede.AsValueString():
-                print('achou') #ele identificou aqui dentre todos os materiais presentes no projeto,
-                #armazenados na variavel materiais, aquele encontrado no objeto ambiente_hall.
+#
+# ambiente_hall = doc.GetElement(revit.ElementId(611306))
+# #abaixo, ele encontrou o parametro compartilhado de revest de paredes no ambiente especificado.
+# for parametro in ambiente_hall.Parameters:
+#     id_param = parametro.Id
+#     print(id_param)
+#     nome_param = parametro.Definition.Name
+#     print(nome_param)
+#     if nome_param == 'COD-REVEST_PAREDES':
+#         revest_parede = parametro
+#         print('aqui,{}'.format(revest_parede.AsValueString()))
+#         #abaixo, acessei o valor atribuído ao parametro compartilhado COD-REVEST_PAREDES:
+#         print(parametro.AsValueString())
+#         for material in materiais:
+#             if material.Name == revest_parede.AsValueString():
+#                 print('achou') #ele identificou aqui dentre todos os materiais presentes no projeto,
+#                 #armazenados na variavel materiais, aquele encontrado no objeto ambiente_hall.
