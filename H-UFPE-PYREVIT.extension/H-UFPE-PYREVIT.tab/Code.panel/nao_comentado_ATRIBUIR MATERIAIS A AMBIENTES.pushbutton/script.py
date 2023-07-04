@@ -1,47 +1,59 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as revit
-
 doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 
-materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials)
-ambientes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Rooms)
+
+materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials).ToElements()
+ambientes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Rooms).ToElements()
 all_walls = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls)
-all_walls_instances = all_walls.WhereElementIsNotElementType()
-all_walls_types = all_walls.WhereElementIsElementType()
-for wall in all_walls:
-    id = wall.Id
+all_walls_list = all_walls.ToElements()
+tipos_parede = all_walls.WhereElementIsElementType().ToElements()
+    # parede.CompoundStructure.GetLayers()
+for walltype in tipos_parede:
+    id = walltype.Id
+    nome_tipo_parede = walltype.Name.AsString()
     print(id)
-    nome_parede = wall.Name
-    parede_elem = doc.GetElement(id)
-    print(parede_elem)
+    a = revit.HostObjAttributes.GetCompoundStructure(wall)
+    print(type(a))
+    # print(a)
+    # atributos_hospedeiro_parede = wall.HostObjAttributes()
 
-ambiente_testando = doc.GetElement(revit.ElementId(611306))
-parede_testando = doc.GetElement(revit.ElementId(358513))
 
-CODREVEST_PAREDES = ambiente_testando.LookupParameter('COD-REVEST_PAREDES')
-material_teste = doc.GetElement(revit.ElementId(414))
-material_teste_ID = material_teste.Id
-nome_material_teste_NOME = material_teste.Name
-material_teste_MARCA = material_teste.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK)
 
-# t = revit.Transaction(doc, "aplicar cod revest a ambiente")
-# t.Start()
-# CODREVEST_PAREDES.Set(material_teste_ID)
-# t.Commit()
-ab = parede_testando.GetMaterialIds(False)
-print(ab)
-for id_elemento_material_parede in ab:
-    for material in materiais:
+#     nome_parede = wall.Name
+#     parede_elem = doc.GetElement(id)
+#     print(parede_elem)
+#
+# ambiente_testando = doc.GetElement(revit.ElementId(611306))
+# parede_testando = doc.GetElement(revit.ElementId(358513))
+#
+# CODREVEST_PAREDES = ambiente_testando.LookupParameter('COD-REVEST_PAREDES')
+# material_teste = doc.GetElement(revit.ElementId(414))
+# material_teste_ID = material_teste.Id
+# nome_material_teste_NOME = material_teste.Name
+# material_teste_MARCA = material_teste.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK)
+# print(material_teste_MARCA)
+# # t = revit.Transaction(doc, "aplicar cod revest a ambiente")
+# # t.Start()
+# # CODREVEST_PAREDES.Set(material_teste_ID)
+# # t.Commit()
+# materiais_em_parede_testando = parede_testando.GetMaterialIds(False)
+# print(materiais_em_parede_testando)
+# for id_material_parede in materiais_em_parede_testando:
+#     print(id_material_parede)
+#     for material in materiais:
+#         cod_mat_parede_str = material.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK).AsValueString()
+#         print(cod_mat_parede_str)
         # print(material.Name)
-        if material.Id == id_elemento_material_parede:
-            # print('deu certo')
-            mat_parede = material
-            cod_mat_parede = material.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK)
-            cod_mat_parede_str = material.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK).AsValueString()
-            # print(cod_mat_parede) #LOCALIZEI AQUI O CÓDIGO ESCRITO NO CAMPO NATIVO 'MARCA',DENTRO
-            # DE CADA MATERIAL.
+        # if material.Id == id_material_parede:
+        #     print('encontrado:',material.Name)
+        #     # mat_parede = material
+        #     cod_mat_parede = material.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK)
+        #     cod_mat_parede_str = material.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK).AsValueString()
+        #     print(cod_mat_parede_str) #LOCALIZEI AQUI O CÓDIGO ESCRITO NO CAMPO NATIVO 'MARCA',DENTRO
+        #     # DE CADA MATERIAL.
 
 # camadas = doc.GetElement(revit.ElementId(1977638)).CompoundStructure
 # print(list(camadas.GetLayers()))
