@@ -19,9 +19,11 @@ for walltype in tipos_parede:
         print(estrutura_parede)
         camadas_estrutura_parede = revit.HostObjAttributes.GetCompoundStructure(walltype).GetLayers()
         for camada in camadas_estrutura_parede:
-            print(camada.Function)
-
-
+            funcao_camada_parede = camada.Function
+            funcao_camada_parede_string = funcao_camada_parede.ToString()
+            print(camada.MaterialId)
+            if camada.Function.ToString() == 'Finish2':
+                print('ok')
 
 # ambiente_testando = doc.GetElement(revit.ElementId(611306))
 # parede_testando = doc.GetElement(revit.ElementId(358513))
