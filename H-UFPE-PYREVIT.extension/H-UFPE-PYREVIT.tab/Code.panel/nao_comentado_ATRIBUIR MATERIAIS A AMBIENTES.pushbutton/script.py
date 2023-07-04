@@ -7,15 +7,17 @@ app = __revit__.Application
 
 materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials).ToElements()
 ambientes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Rooms).ToElements()
-all_walls = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls)
+all_walls = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsNotElementType()
 all_walls_list = all_walls.ToElements()
 tipos_parede = all_walls.WhereElementIsElementType().ToElements()
     # parede.CompoundStructure.GetLayers()
+#
 for walltype in tipos_parede:
     id = walltype.Id
-    nome_tipo_parede = walltype.Name.AsString()
     print(id)
-    a = revit.HostObjAttributes.GetCompoundStructure(wall)
+    titulo_tipo = walltype.get_Parameter(revit.BuiltInParameter.ELEM_TYPE_LABEL)
+    print(titulo_tipo)
+    a = revit.HostObjAttributes.GetCompoundStructure(walltype)
     print(type(a))
     # print(a)
     # atributos_hospedeiro_parede = wall.HostObjAttributes()
@@ -92,3 +94,10 @@ for walltype in tipos_parede:
 #             if material.Name == revest_parede.AsValueString():
 #                 print('achou') #ele identificou aqui dentre todos os materiais presentes no projeto,
 #                 #armazenados na variavel materiais, aquele encontrado no objeto ambiente_hall.
+
+
+# SINTAXES QUE FUNCIONARAM:
+ # pra retornar nome (string) de tipo de objeto (ex: nome do tipo da parede tal)
+# for wall_instancia in all_walls_list:
+#     titulo = wall_instancia.get_Parameter(revit.BuiltInParameter.ELEM_TYPE_PARAM)
+#     print(titulo.AsValueString())
