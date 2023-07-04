@@ -11,12 +11,13 @@ all_walls_list = all_walls.ToElements()
 tipos_parede =  revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsElementType().ToElements()
     # parede.CompoundStructure.GetLayers()
 for walltype in tipos_parede:
-    id = walltype.Id
+    id = walltype.GetParameters('HasPhases')
+    print(id)
     titulo_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
-    print(titulo_tipo.AsString())
+    # print(titulo_tipo.AsString())
     if titulo_tipo.AsString() != 'Parede cortina':
         estrutura_parede = revit.HostObjAttributes.GetCompoundStructure(walltype)
-        print(estrutura_parede)
+        quant_camadas_parede = estrutura_parede.LayerCount
         camadas_estrutura_parede = revit.HostObjAttributes.GetCompoundStructure(walltype).GetLayers()
         for camada in camadas_estrutura_parede:
             funcao_camada_parede = camada.Function
