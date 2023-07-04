@@ -12,22 +12,17 @@ tipos_parede =  revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCate
     # parede.CompoundStructure.GetLayers()
 for walltype in tipos_parede:
     id = walltype.Id
-    print(id)
     titulo_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
     print(titulo_tipo.AsString())
-    if type(walltype) == 'NoneType':
-        print('ops')
-        # a = revit.HostObjAttributes.GetCompoundStructure(walltype)
-        # print(a.EndCap())
-    # print(a)
-    # atributos_hospedeiro_parede = wall.HostObjAttributes()
+    if titulo_tipo.AsString() != 'Parede cortina':
+        estrutura_parede = revit.HostObjAttributes.GetCompoundStructure(walltype)
+        print(estrutura_parede)
+        camadas_estrutura_parede = revit.HostObjAttributes.GetCompoundStructure(walltype).GetLayers()
+        for camada in camadas_estrutura_parede:
+            print(camada.Function)
 
 
 
-#     nome_parede = wall.Name
-#     parede_elem = doc.GetElement(id)
-#     print(parede_elem)
-#
 # ambiente_testando = doc.GetElement(revit.ElementId(611306))
 # parede_testando = doc.GetElement(revit.ElementId(358513))
 #
@@ -101,3 +96,8 @@ for walltype in tipos_parede:
 # for wall_instancia in all_walls_list:
 #     titulo = wall_instancia.get_Parameter(revit.BuiltInParameter.ELEM_TYPE_PARAM)
 #     print(titulo.AsValueString())
+
+# for walltype in tipos_parede:
+#     id = walltype.Id
+#     titulo_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
+#     print(titulo_tipo.AsString())
