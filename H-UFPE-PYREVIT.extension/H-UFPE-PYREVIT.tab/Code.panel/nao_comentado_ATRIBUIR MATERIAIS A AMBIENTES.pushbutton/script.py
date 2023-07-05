@@ -11,20 +11,36 @@ instancias_paredes_list = instancias_paredes.ToElements()
 tipos_parede =  revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsElementType().ToElements()
     # parede.CompoundStructure.GetLayers()
 
-wall_a_partir_de_id = doc.GetElement(revit.ElementId(343830))
+wall_a_partir_de_id = doc.GetEle  ment(revit.ElementId(343830))
 bbox_wall = wall_a_partir_de_id.get_BoundingBox(doc.ActiveView).Max
 print('As coordenadas XYZ da bounding box de {} (elemento da categoria {}) são: {}.'.format(wall_a_partir_de_id.Name, wall_a_partir_de_id.Category.Name, bbox_wall)) #posiçao X,Y e Z respectivamente (índices 0 a 2)
 #fazer o mesmo procedimento agora para um piso:
 #agora para ambiente:
 ambiente_test = doc.GetElement(revit.ElementId(1123259))
 # nome = ambiente_test.Name.Value #DUVIDA: não entendi pq o atributo Name nao pega aqui mas pegou p ver o nome da parede.
-bbox_ambiente = ambiente_test.get_BoundingBox(doc.ActiveView).Max
+bbox_ambiente = ambiente_test.get_BoundingBox(doc.ActiveView)
 print('As coordenadas XYZ da bounding box do elemento ID {} (categoria {}) são: {}.'.format(ambiente_test.Id, ambiente_test.Category.Name, bbox_ambiente))
 
 
 #descobrir como usar o metodo
 
-
+# Define the bounding box
+min_point = XYZ(0, 0, 0)  # Minimum point coordinates
+max_point = XYZ(10, 10, 10)  # Maximum point coordinates
+bounding_box = BoundingBoxXYZ()
+bounding_box.Min = min_point
+bounding_box.Max = max_point
+# Create the filter
+filter = BoundingBoxIntersectsFilter(bounding_box)
+# Use the filter to retrieve elements
+collector = FilteredElementCollector(doc)
+elements = collector.WherePasses(filter).ToElements()
+# Iterate over the elements
+for element in elements:
+    print('ENCONTRADO!')
+    print(element)
+    # Do something with the filtered elements
+    pass
 
 for walltype in tipos_parede:
     wall_id = walltype.Id
