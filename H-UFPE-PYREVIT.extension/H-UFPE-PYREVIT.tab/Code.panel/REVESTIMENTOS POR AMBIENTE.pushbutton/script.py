@@ -4,54 +4,66 @@ doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 
-materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials).ToElements()
-ambientes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Rooms).ToElements()
-paredes =   revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).ToElements()
-pisos =     revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Floors).ToElements()
-forros =    revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Ceilings).ToElements()
+materiais_collector = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials)
+ambientes_collector = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Rooms)
+paredes_collector =   revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls)
+pisos_collector =     revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Floors)
+forros_collector =    revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Ceilings)
+
+materiais = materiais_collector.ToElements()
+ambientes = ambientes_collector.ToElements()
+pisos =     pisos_collector.ToElements()
+forros =    forros_collector.ToElements()
+paredes =   paredes_collector.ToElements()
+paredes_instancias = paredes_collector.WhereElementIsNotElementType().ToElements()
+paredes_tipos =  paredes_collector.WhereElementIsElementType().ToElements()
 
 colecao_completa = [materiais, ambientes, pisos, forros, paredes]
-
-instancias_paredes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsNotElementType()
-instancias_paredes_list = instancias_paredes.ToElements()
-tipos_parede =  revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsElementType().ToElements()
-    # parede.CompoundStructure.GetLayers()
+colecao_obj_por_ambiente = []  # make this be a dict instead of list.
 
 wall_a_partir_de_id = doc.GetElement(revit.ElementId(343830))
-bbox_wall = wall_a_partir_de_id.get_BoundingBox(doc.ActiveView).Max
-# print('As coordenadas XYZ da bounding box de {} (elemento da categoria {}) são: {}.'.format(wall_a_partir_de_id.Name, wall_a_partir_de_id.Category.Name, bbox_wall)) #posiçao X,Y e Z respectivamente (índices 0 a 2)
-#fazer o mesmo procedimento agora para um piso:
+bbox_wall = wall_a_partir_de_id.get_BoundingBox(doc.ActiveView)
+outline = revit.Outline(bbox_wall.Min, bbox_wall.Max) #é a outline que se passa como arg pro método revit.BoundingBoxIntersectsFilter (e não um objeto tipo BoundingBoxXYZ
+print('As coordenadas XYZ da bounding box do elemento ID {} (categoria {}) foram localizadas.'.format(wall_a_partir_de_id.Id, wall_a_partir_de_id.Category.Name))
 
-#agora para ambiente:
 ambientes_em_teste = []
 amb_lavabo =  doc.GetElement(revit.ElementId(1123256))
 amb_wcm = doc.GetElement(revit.ElementId(1123259))
 amb_wcf = doc.GetElement(revit.ElementId(1123262))
 
 # nome = amb_wcm.Name.Value #DUVIDA: não entendi pq o atributo Name nao pega aqui mas pegou p ver o nome da parede.
-bbox_ambiente = amb_wcm.get_BoundingBox(doc.ActiveView)
-outline = revit.Outline(bbox_ambiente.Min, bbox_ambiente.Max) #é a outline que se passa como arg pro método revit.BoundingBoxIntersectsFilter (e não um objeto tipo BoundingBoxXYZ
-print(outline.MinimumPoint, outline.MaximumPoint)
-print('As coordenadas XYZ da bounding box do elemento ID {} (categoria {}) são: {}.'.format(amb_wcm.Id, amb_wcm.Category.Name, bbox_ambiente))
-# Create the filter
-filter = revit.BoundingBoxIntersectsFilter(outline)
-# Use the filter to retrieve elements
-collected_elements = revit.FilteredElementCollector(doc).WherePasses(filter).ToElements()
+
+print('Localizadas coordenadas XYZ da bounding box dos seguintes elementos:')
+for ambiente in ambientes:
+    ambiente_id = ambiente.Id.ToString()
+    ambiente_name = ambiente.get_Parameter(revit.BuiltInParameter.ROOM_NAME).AsString()
+    ambiente_level = ambiente.Level.Name
+    ambiente_elem = doc.GetElement(revit.ElementId(int(ambiente_id)))
+    ambiente_bbox = ambiente.get_BoundingBox(doc.ActiveView)
+    ambiente_outline = revit.Outline(ambiente_bbox.Min, ambiente_bbox.Max) #é a outline que se passa como arg pro método revit.BoundingBoxIntersectsFilter (e não um objeto tipo BoundingBoxXYZ
+    print('{} - {}'.format(ambiente_name, ambiente_level))
+# Create filter
+    ambiente_como_filtro = revit.BoundingBoxIntersectsFilter(ambiente_outline)
+    # Use filter to retrieve elements
+    collected_intersecting_elements = revit.FilteredElementCollector(doc).WherePasses(ambiente_como_filtro).ToElements()
+    # lista_python_collected_elements = ['Ambiente {}: {}'.format(ambiente),list(collected_intersecting_elements)]
+    colecao_obj_por_ambiente.append(collected_intersecting_elements)
 # Iterate over the elements
-paredes_pisos_forros = ['Paredes', 'Pisos', 'Forros', ]
-for element in collected_elements:     # Do something with the filtered elements
-
+    categorias_interessam = ['Paredes', 'Pisos', 'Forros']
     cont_elem = 0
-    try:
-        if any(superficie == element.Category.Name for superficie in paredes_pisos_forros):
-            print('sim')
-            print('ENCONTRADO! tipo {}, {}'.format(element.Category.Name, element.Name))
-            cont_elem+=1
-    except AttributeError as e:
-        print('-'*50,element.Name,e)
-        pass
+    print('ENCONTRADOS os seguintes objetos:\n\n')
+    for element in collected_intersecting_elements:     # Do something with the filtered elements
+        try:
+            if any(superficie == element.Category.Name for superficie in categorias_interessam):
+                print('{}, {}, cód. ID {}'.format(element.Name, element.Category.Name, element.Id))
+                cont_elem+=1
+        except AttributeError as e:
+            # print('-'*50,element.Name,e)
+            pass
+    print('TOTAL: {} elementos construtivos de interesse em {}{}'.format(cont_elem, ambiente_name, '-'*50))
+    print('\n')
 
-for walltype in tipos_parede:
+for walltype in paredes_tipos:
     wall_id = walltype.Id
     nome_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
     # print(titulo_tipo.AsString())
@@ -155,25 +167,9 @@ for walltype in tipos_parede:
 #     titulo = wall_instancia.get_Parameter(revit.BuiltInParameter.ELEM_TYPE_PARAM)
 #     print(titulo.AsValueString())
 
-# for walltype in tipos_parede:
+# for walltype in paredes_tipos:
 #     id = walltype.Id
 #     titulo_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
 #     print(titulo_tipo.AsString())
 
 # revestimentos_coletados = [material.Name for material in materiais if material.Id == id_material_camada]
-
-
-# wall_a_partir_de_id = doc.GetElement(revit.ElementId(343830))
-# bbox_wall = wall_a_partir_de_id.get_BoundingBox(doc.ActiveView).Max
-# print(bbox_wall[0], bbox_wall[1], bbox_wall[2]) #posiçao X,Y e Z respectivamente (índices 0 a 2)
-# print(type(bbox_wall[0])) #é float.
-# for position in bbox_wall:
-#     print(position)
-
-
-# Define the bounding box #do ChatGPT
-# min_point = revit.XYZ(0, 0, 0)  # Minimum point coordinates
-# max_point = revit.XYZ(10, 10, 10)  # Maximum point coordinates
-# bounding_box = revit.BoundingBoxXYZ()
-# bounding_box.Min = min_point
-# bounding_box.Max = max_point
