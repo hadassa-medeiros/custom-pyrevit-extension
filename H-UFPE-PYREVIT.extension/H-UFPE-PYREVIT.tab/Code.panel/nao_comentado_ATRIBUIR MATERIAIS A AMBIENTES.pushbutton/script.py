@@ -14,12 +14,19 @@ app = __revit__.Application
 # aplicar o get material às camadas Finish2 (e/ou as ultimas camadas/as mais superficiais/mais internas no caso de paredes)
 # passar o material coletado pro campo do parametro compartilhado 'COD_REVEST-PAREDE' qd o elem for parede, 'COD..PISO' qd for piso e forro qd forro.
 # conferir
+colecao_completa = [materiais, ambientes, pisos, forros, paredes]
 materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials).ToElements()
 ambientes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Rooms).ToElements()
+paredes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).ToElements()
+pisos = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Floors).ToElements()
+forros = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Ceilings).ToElements()
+
+
 instancias_paredes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsNotElementType()
 instancias_paredes_list = instancias_paredes.ToElements()
 tipos_parede =  revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsElementType().ToElements()
     # parede.CompoundStructure.GetLayers()
+
 
 wall_a_partir_de_id = doc.GetElement(revit.ElementId(343830))
 bbox_wall = wall_a_partir_de_id.get_BoundingBox(doc.ActiveView).Max
@@ -28,8 +35,8 @@ bbox_wall = wall_a_partir_de_id.get_BoundingBox(doc.ActiveView).Max
 
 #agora para ambiente:
 ambientes_em_teste = []
-amb_wcm = doc.GetElement(revit.ElementId(1123259))
 amb_lavabo =  doc.GetElement(revit.ElementId(1123256))
+amb_wcm = doc.GetElement(revit.ElementId(1123259))
 amb_wcf = doc.GetElement(revit.ElementId(1123262))
 
 # nome = amb_wcm.Name.Value #DUVIDA: não entendi pq o atributo Name nao pega aqui mas pegou p ver o nome da parede.
@@ -37,29 +44,23 @@ bbox_ambiente = amb_wcm.get_BoundingBox(doc.ActiveView)
 outline = revit.Outline(bbox_ambiente.Min, bbox_ambiente.Max) #é a outline que se passa como arg pro método revit.BoundingBoxIntersectsFilter (e não um objeto tipo BoundingBoxXYZ
 print(outline.MinimumPoint, outline.MaximumPoint)
 print('As coordenadas XYZ da bounding box do elemento ID {} (categoria {}) são: {}.'.format(amb_wcm.Id, amb_wcm.Category.Name, bbox_ambiente))
-#descobrir como usar o metodo
-
-# Define the bounding box
-min_point = revit.XYZ(0, 0, 0)  # Minimum point coordinates
-max_point = revit.XYZ(10, 10, 10)  # Maximum point coordinates
-bounding_box = revit.BoundingBoxXYZ()
-bounding_box.Min = min_point
-bounding_box.Max = max_point
 # Create the filter
 filter = revit.BoundingBoxIntersectsFilter(outline)
 # Use the filter to retrieve elements
 collected_elements = revit.FilteredElementCollector(doc).WherePasses(filter).ToElements()
 # Iterate over the elements
+paredes_pisos_forros = ['Paredes', 'Pisos', 'Forros', ]
 for element in collected_elements:     # Do something with the filtered elements
+
     cont_elem = 0
-    if type(element) == ''
     try:
-        print('ENCONTRADO! tipo {}, {}'.format(element.Category, element.Name))
-        cont_elem+=1
-    except AttributeError:
+        if any(superficie == element.Category.Name for superficie in paredes_pisos_forros):
+            print('sim')
+            print('ENCONTRADO! tipo {}, {}'.format(element.Category.Name, element.Name))
+            cont_elem+=1
+    except AttributeError as e:
+        print('-'*50,element.Name,e)
         pass
-        cont_elem += 1
-        print('encontrados')
 
 for walltype in tipos_parede:
     wall_id = walltype.Id
@@ -74,7 +75,7 @@ for walltype in tipos_parede:
             funcao_camada = camada.Function
             # print(type(funcao_camada)) # o tipo aqui é 'MaterialFunctionAssignment', nativo Revit API
             funcao_camada_str = funcao_camada.ToString() #pro tipo da variável virar string obviamente
-            if camada.Function.ToString() == 'Finish2' and camada.LayerId == 4: #uma forma de double check: tanto q a camada da parede é de fato de revestimento tipo Acabamento2 (a última na hierarquia),
+            if camada.Function.ToString() == 'Finish2' and camada.LayerId == estrutura_parede.LayerCount-1: #uma forma de double check: tanto q a camada da parede é de fato de revestimento tipo Acabamento2 (a última na hierarquia),
                 #como que se trata da camada mais interna da parede, que faceia o ambiente interno que ela delimita.(
                 id_revest = int(camada.MaterialId.ToString())
             # acessar objeto Material (type Material contendo todas as infos)
@@ -88,7 +89,6 @@ for walltype in tipos_parede:
             #     if material.Id == camada.MaterialId:
             #     revest = material
             #     print(material.Name)
-
         # print(revestimentos_coletados)
 
 
@@ -180,3 +180,11 @@ for walltype in tipos_parede:
 # print(type(bbox_wall[0])) #é float.
 # for position in bbox_wall:
 #     print(position)
+
+
+# Define the bounding box #do ChatGPT
+# min_point = revit.XYZ(0, 0, 0)  # Minimum point coordinates
+# max_point = revit.XYZ(10, 10, 10)  # Maximum point coordinates
+# bounding_box = revit.BoundingBoxXYZ()
+# bounding_box.Min = min_point
+# bounding_box.Max = max_point
