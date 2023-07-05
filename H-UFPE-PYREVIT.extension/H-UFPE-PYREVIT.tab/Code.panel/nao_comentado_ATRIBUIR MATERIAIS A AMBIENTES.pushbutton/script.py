@@ -3,7 +3,17 @@ import Autodesk.Revit.DB as revit
 doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
-
+# OBJETIVO - PASSO A PASSO
+# achar todos pisos,
+# achar tds os ids deles
+# iterar por tds os ids criando um GetElement p cada id,
+# criar a boundingbox do elemento do get
+# criar a outline a partir da bounding bbox
+# passar a a outline como arg pro metodo de intersectar
+# ver quais itens/objetos intersectam e ver se me atende (tem q constar as paredes c revest, o forro e o piso)
+# aplicar o get material às camadas Finish2 (e/ou as ultimas camadas/as mais superficiais/mais internas no caso de paredes)
+# passar o material coletado pro campo do parametro compartilhado 'COD_REVEST-PAREDE' qd o elem for parede, 'COD..PISO' qd for piso e forro qd forro.
+# conferir
 materiais = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Materials).ToElements()
 ambientes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Rooms).ToElements()
 instancias_paredes = revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsNotElementType()
@@ -11,36 +21,45 @@ instancias_paredes_list = instancias_paredes.ToElements()
 tipos_parede =  revit.FilteredElementCollector(doc).OfCategory(revit.BuiltInCategory.OST_Walls).WhereElementIsElementType().ToElements()
     # parede.CompoundStructure.GetLayers()
 
-wall_a_partir_de_id = doc.GetEle  ment(revit.ElementId(343830))
+wall_a_partir_de_id = doc.GetElement(revit.ElementId(343830))
 bbox_wall = wall_a_partir_de_id.get_BoundingBox(doc.ActiveView).Max
-print('As coordenadas XYZ da bounding box de {} (elemento da categoria {}) são: {}.'.format(wall_a_partir_de_id.Name, wall_a_partir_de_id.Category.Name, bbox_wall)) #posiçao X,Y e Z respectivamente (índices 0 a 2)
+# print('As coordenadas XYZ da bounding box de {} (elemento da categoria {}) são: {}.'.format(wall_a_partir_de_id.Name, wall_a_partir_de_id.Category.Name, bbox_wall)) #posiçao X,Y e Z respectivamente (índices 0 a 2)
 #fazer o mesmo procedimento agora para um piso:
+
 #agora para ambiente:
-ambiente_test = doc.GetElement(revit.ElementId(1123259))
-# nome = ambiente_test.Name.Value #DUVIDA: não entendi pq o atributo Name nao pega aqui mas pegou p ver o nome da parede.
-bbox_ambiente = ambiente_test.get_BoundingBox(doc.ActiveView)
-print('As coordenadas XYZ da bounding box do elemento ID {} (categoria {}) são: {}.'.format(ambiente_test.Id, ambiente_test.Category.Name, bbox_ambiente))
+ambientes_em_teste = []
+amb_wcm = doc.GetElement(revit.ElementId(1123259))
+amb_lavabo =  doc.GetElement(revit.ElementId(1123256))
+amb_wcf = doc.GetElement(revit.ElementId(1123262))
 
-
+# nome = amb_wcm.Name.Value #DUVIDA: não entendi pq o atributo Name nao pega aqui mas pegou p ver o nome da parede.
+bbox_ambiente = amb_wcm.get_BoundingBox(doc.ActiveView)
+outline = revit.Outline(bbox_ambiente.Min, bbox_ambiente.Max) #é a outline que se passa como arg pro método revit.BoundingBoxIntersectsFilter (e não um objeto tipo BoundingBoxXYZ
+print(outline.MinimumPoint, outline.MaximumPoint)
+print('As coordenadas XYZ da bounding box do elemento ID {} (categoria {}) são: {}.'.format(amb_wcm.Id, amb_wcm.Category.Name, bbox_ambiente))
 #descobrir como usar o metodo
 
 # Define the bounding box
-min_point = XYZ(0, 0, 0)  # Minimum point coordinates
-max_point = XYZ(10, 10, 10)  # Maximum point coordinates
-bounding_box = BoundingBoxXYZ()
+min_point = revit.XYZ(0, 0, 0)  # Minimum point coordinates
+max_point = revit.XYZ(10, 10, 10)  # Maximum point coordinates
+bounding_box = revit.BoundingBoxXYZ()
 bounding_box.Min = min_point
 bounding_box.Max = max_point
 # Create the filter
-filter = BoundingBoxIntersectsFilter(bounding_box)
+filter = revit.BoundingBoxIntersectsFilter(outline)
 # Use the filter to retrieve elements
-collector = FilteredElementCollector(doc)
-elements = collector.WherePasses(filter).ToElements()
+collected_elements = revit.FilteredElementCollector(doc).WherePasses(filter).ToElements()
 # Iterate over the elements
-for element in elements:
-    print('ENCONTRADO!')
-    print(element)
-    # Do something with the filtered elements
-    pass
+for element in collected_elements:     # Do something with the filtered elements
+    cont_elem = 0
+    if type(element) == ''
+    try:
+        print('ENCONTRADO! tipo {}, {}'.format(element.Category, element.Name))
+        cont_elem+=1
+    except AttributeError:
+        pass
+        cont_elem += 1
+        print('encontrados')
 
 for walltype in tipos_parede:
     wall_id = walltype.Id
