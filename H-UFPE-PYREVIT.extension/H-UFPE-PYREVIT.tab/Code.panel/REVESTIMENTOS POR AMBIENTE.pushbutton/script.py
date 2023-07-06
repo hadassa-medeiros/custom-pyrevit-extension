@@ -79,7 +79,7 @@ for ambiente in ambientes_em_teste:
                         elif camada.Function.ToString() == 'Finish2' and camada.LayerId == quant_camadas_estrut-1:
                         #ou: (posso deixar mais explicito que to aplicando a piso forro e parede na condicao chamada em vez de usar a regra sobre hierarquia/index das camadas
                         # elif camada.Function.ToString() == 'Finish2' and element.Category.Name == 'Piso' ou forro
-                            print('isso é forro ou parede')
+                            print('acima deve retornar só ou forro ou parede')
 
                     except AttributeError as e:
                         print('erro ao tentar printar nome do objeto:', piso.Id, e)
