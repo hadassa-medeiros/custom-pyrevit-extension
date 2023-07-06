@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as revit
+
 doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
@@ -16,59 +17,91 @@ pisos =     pisos_collector.ToElements()
 forros =    forros_collector.ToElements()
 paredes =   paredes_collector.ToElements()
 paredes_instancias = paredes_collector.WhereElementIsNotElementType().ToElements()
-paredes_tipos =  paredes_collector.WhereElementIsElementType().ToElements()
+todos_elem_constr = [pisos_collector, forros_collector, paredes_collector]
+print(type(todos_elem_constr[0]))
 
-colecao_completa = [materiais, ambientes, pisos, forros, paredes]
-colecao_obj_por_ambiente = []  # make this be a dict instead of list.
+#COLETA/IDENTIFICA MATERIAIS DAS CAMADAS DE REVESTIMENTO DE PISOS
+for piso in pisos_collector.WhereElementIsElementType():
+    estrut_piso = revit.HostObjAttributes.GetCompoundStructure(piso)
+    quant_camadas_piso = estrut_piso.LayerCount
+    camadas_estrut_piso = estrut_piso.GetLayers()
+    for camada in camadas_estrut_piso:
+        funcao_camada = camada.Function
+        funcao_camada_str = funcao_camada.ToString() #pro tipo da variável virar string obviamente
+        try:
+            if camada.Function.ToString() == 'Finish2': #uma forma de double check: tanto q a camada da parede é de fato de revestimento tipo Acabamento2 (a última na hierarquia),
+                id_mat_revest_piso = int(camada.MaterialId.ToString())
+                # acessar objeto type Material dentre lista Materiais projeto a partir do id mat. atribuído à camada de revestimento Finish2 interna
+                material_pelo_id_revest_piso = doc.GetElement(revit.ElementId(id_mat_revest_piso))
+                print(id_mat_revest_piso, material_pelo_id_revest_piso.Name)
+                for material in materiais:
+                    if material.Id == camada.MaterialId:
+                        revest = material
+                        print(material.Name)
+        except AttributeError as e:
+            print('erro ao tentar printar nome do objeto:', piso.Id, e)
 
-wall_a_partir_de_id = doc.GetElement(revit.ElementId(343830))
-bbox_wall = wall_a_partir_de_id.get_BoundingBox(doc.ActiveView)
-outline = revit.Outline(bbox_wall.Min, bbox_wall.Max) #é a outline que se passa como arg pro método revit.BoundingBoxIntersectsFilter (e não um objeto tipo BoundingBoxXYZ
-print('As coordenadas XYZ da bounding box do elemento ID {} (categoria {}) foram localizadas.'.format(wall_a_partir_de_id.Id, wall_a_partir_de_id.Category.Name))
-
-ambientes_em_teste = []
 amb_lavabo =  doc.GetElement(revit.ElementId(1123256))
 amb_wcm = doc.GetElement(revit.ElementId(1123259))
 amb_wcf = doc.GetElement(revit.ElementId(1123262))
-
+ambientes_em_teste = [amb_wcf]
 # nome = amb_wcm.Name.Value #DUVIDA: não entendi pq o atributo Name nao pega aqui mas pegou p ver o nome da parede.
-
 print('Localizadas coordenadas XYZ da bounding box dos seguintes elementos:')
-for ambiente in ambientes:
+for ambiente in ambientes_em_teste:
     ambiente_id = ambiente.Id.ToString()
     ambiente_name = ambiente.get_Parameter(revit.BuiltInParameter.ROOM_NAME).AsString()
     ambiente_level = ambiente.Level.Name
     ambiente_elem = doc.GetElement(revit.ElementId(int(ambiente_id)))
     ambiente_bbox = ambiente.get_BoundingBox(doc.ActiveView)
     ambiente_outline = revit.Outline(ambiente_bbox.Min, ambiente_bbox.Max) #é a outline que se passa como arg pro método revit.BoundingBoxIntersectsFilter (e não um objeto tipo BoundingBoxXYZ
+    cod_paredes = ambiente.LookupParameter('COD-REVEST_PAREDES')
+    cod_piso = ambiente.LookupParameter('COD-REVEST_PISO')
+    cod_teto = ambiente.LookupParameter('COD-REVEST_TETO')
     print('{} - {}'.format(ambiente_name, ambiente_level))
-# Create filter
-    ambiente_como_filtro = revit.BoundingBoxIntersectsFilter(ambiente_outline)
-    # Use filter to retrieve elements
-    collected_intersecting_elements = revit.FilteredElementCollector(doc).WherePasses(ambiente_como_filtro).ToElements()
+
+    ambiente_como_filtro = revit.BoundingBoxIntersectsFilter(ambiente_outline)# Create filter
+    collected_intersecting_elements = revit.FilteredElementCollector(doc).WherePasses(ambiente_como_filtro).ToElements()    # Use filter to retrieve elements
     # lista_python_collected_elements = ['Ambiente {}: {}'.format(ambiente),list(collected_intersecting_elements)]
-    colecao_obj_por_ambiente.append(collected_intersecting_elements)
 # Iterate over the elements
-    categorias_interessam = ['Paredes', 'Pisos', 'Forros']
+    categorias_em_PTBR = ['Paredes', 'Pisos', 'Forros']
+    categorias_relevantes = [
+        str(revit.BuiltInCategory.OST_Floors),
+        str(revit.BuiltInCategory.OST_Walls),
+        str(revit.BuiltInCategory.OST_Ceilings)
+                  ]
     cont_elem = 0
     print('ENCONTRADOS os seguintes objetos:\n\n')
     for element in collected_intersecting_elements:     # Do something with the filtered elements
+        # print(element.get_Parameter(revit.BuiltInParameter.ELEM_CATEGORY_PARAM).AsValueString())
         try:
-            if any(superficie == element.Category.Name for superficie in categorias_interessam):
+            if any(categoria == str(element.Category.BuiltInCategory) for categoria in categorias_relevantes):
                 print('{}, {}, cód. ID {}'.format(element.Name, element.Category.Name, element.Id))
-                cont_elem+=1
+                cont_elem += 1
+        # try:
+        #     if any(superficie == element.Category.Name for superficie in categorias_interessam):
+        #         print('{}, {}, cód. ID {}'.format(element.Name, element.Category.Name, element.Id))
+        #         cont_elem+=1
         except AttributeError as e:
             # print('-'*50,element.Name,e)
             pass
     print('TOTAL: {} elementos construtivos de interesse em {}{}'.format(cont_elem, ambiente_name, '-'*50))
     print('\n')
 
-for walltype in paredes_tipos:
-    wall_id = walltype.Id
-    nome_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
-    # print(titulo_tipo.AsString())
+
+  # AQUI VAI SER O CODIGO COMPLETO, COM UM ITERADOR Q DENTRO DELE CONTEM OS 3 CASOS:PISO/FOORO/PAREDE E NO FIM ATRIBUI O COD POR UMA TRANSACTION.
+# for elemento in todos_elem_constr.WhereElementIsElementType():
+#     if elemento is parede
+#     elif ou if? elemento is piso ou forro
+# # t = revit.Transaction(doc, "aplicar cod revest a ambiente")
+# # t.Start()
+# # CODREVEST_PAREDES.Set(material_teste_ID)
+# # t.Commit()
+
+
+for parede_tipo in paredes_collector.WhereElementIsElementType():
+    nome_tipo = parede_tipo.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
     if nome_tipo.AsString() != 'Parede cortina':
-        estrutura_parede = revit.HostObjAttributes.GetCompoundStructure(walltype)
+        estrutura_parede = revit.HostObjAttributes.GetCompoundStructure(parede_tipo)
         quant_camadas_parede = estrutura_parede.LayerCount
         print(quant_camadas_parede)
         camadas_estrutura_parede = estrutura_parede.GetLayers()
@@ -84,8 +117,6 @@ for walltype in paredes_tipos:
                 # de revestimento Finish2 interna
                 material_teste = doc.GetElement(revit.ElementId(id_revest))
                 print(material_teste.Name)
-            # material_teste_ID = material_teste.Id
-            # nome_material_teste_NOME = material_teste.Name
             # for material in materiais:
             #     if material.Id == camada.MaterialId:
             #     revest = material
@@ -93,19 +124,11 @@ for walltype in paredes_tipos:
         # print(revestimentos_coletados)
 
 
-# ambiente_testando = doc.GetElement(revit.ElementId(611306))
-# parede_testando = doc.GetElement(revit.ElementId(358513))
 #
-# CODREVEST_PAREDES = ambiente_testando.LookupParameter('COD-REVEST_PAREDES')
 # material_teste = doc.GetElement(revit.ElementId(414))
 # material_teste_ID = material_teste.Id
 # nome_material_teste_NOME = material_teste.Name
 # material_teste_MARCA = material_teste.get_Parameter(revit.BuiltInParameter.ALL_MODEL_MARK)
-# print(material_teste_MARCA)
-# # t = revit.Transaction(doc, "aplicar cod revest a ambiente")
-# # t.Start()
-# # CODREVEST_PAREDES.Set(material_teste_ID)
-# # t.Commit()
 # materiais_em_parede_testando = parede_testando.GetMaterialIds(False)
 # print(materiais_em_parede_testando)
 # for id_material_parede in materiais_em_parede_testando:
@@ -135,7 +158,7 @@ for walltype in paredes_tipos:
 #         # print(p.Definition.Name)
 #         wall_c = wall.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
 #         print(wall_c.AsString())
-#     print(wall.Name) #nao funciona!! nao faz sentido pq Name é um mebro (DO TIPO eLEMENT) DA wALLtYPE
+#     print(wall.Name) #nao funciona!! nao faz sentido pq Name é um mebro (DO TIPO eLEMENT) DA parede_tipo
 #
 
 
@@ -167,9 +190,9 @@ for walltype in paredes_tipos:
 #     titulo = wall_instancia.get_Parameter(revit.BuiltInParameter.ELEM_TYPE_PARAM)
 #     print(titulo.AsValueString())
 
-# for walltype in paredes_tipos:
-#     id = walltype.Id
-#     titulo_tipo = walltype.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
+# for parede_tipo in paredes_tipos:
+#     id = parede_tipo.Id
+#     titulo_tipo = parede_tipo.get_Parameter(revit.BuiltInParameter.ALL_MODEL_TYPE_NAME)
 #     print(titulo_tipo.AsString())
 
 # revestimentos_coletados = [material.Name for material in materiais if material.Id == id_material_camada]
