@@ -18,33 +18,13 @@ forros =    forros_collector.ToElements()
 paredes =   paredes_collector.ToElements()
 paredes_instancias = paredes_collector.WhereElementIsNotElementType().ToElements()
 todos_elem_constr = [pisos_collector, forros_collector, paredes_collector]
-print(type(todos_elem_constr[0]))
 
-#COLETA/IDENTIFICA MATERIAIS DAS CAMADAS DE REVESTIMENTO DE PISOS
-for piso in pisos_collector.WhereElementIsElementType():
-    estrut_piso = revit.HostObjAttributes.GetCompoundStructure(piso)
-    quant_camadas_piso = estrut_piso.LayerCount
-    camadas_estrut_piso = estrut_piso.GetLayers()
-    for camada in camadas_estrut_piso:
-        funcao_camada = camada.Function
-        funcao_camada_str = funcao_camada.ToString() #pro tipo da variável virar string obviamente
-        try:
-            if camada.Function.ToString() == 'Finish2': #uma forma de double check: tanto q a camada da parede é de fato de revestimento tipo Acabamento2 (a última na hierarquia),
-                id_mat_revest_piso = int(camada.MaterialId.ToString())
-                # acessar objeto type Material dentre lista Materiais projeto a partir do id mat. atribuído à camada de revestimento Finish2 interna
-                material_pelo_id_revest_piso = doc.GetElement(revit.ElementId(id_mat_revest_piso))
-                print(id_mat_revest_piso, material_pelo_id_revest_piso.Name)
-                for material in materiais:
-                    if material.Id == camada.MaterialId:
-                        revest = material
-                        print(material.Name)
-        except AttributeError as e:
-            print('erro ao tentar printar nome do objeto:', piso.Id, e)
+
 
 amb_lavabo =  doc.GetElement(revit.ElementId(1123256))
 amb_wcm = doc.GetElement(revit.ElementId(1123259))
 amb_wcf = doc.GetElement(revit.ElementId(1123262))
-ambientes_em_teste = [amb_wcf]
+ambientes_em_teste = [amb_wcm]
 # nome = amb_wcm.Name.Value #DUVIDA: não entendi pq o atributo Name nao pega aqui mas pegou p ver o nome da parede.
 print('Localizadas coordenadas XYZ da bounding box dos seguintes elementos:')
 for ambiente in ambientes_em_teste:
@@ -60,41 +40,60 @@ for ambiente in ambientes_em_teste:
     print('{} - {}'.format(ambiente_name, ambiente_level))
 
     ambiente_como_filtro = revit.BoundingBoxIntersectsFilter(ambiente_outline)# Create filter
-    collected_intersecting_elements = revit.FilteredElementCollector(doc).WherePasses(ambiente_como_filtro).ToElements()    # Use filter to retrieve elements
+    intersecting_elements = revit.FilteredElementCollector(doc).WherePasses(ambiente_como_filtro).ToElements()    # Use filter to retrieve elements
     # lista_python_collected_elements = ['Ambiente {}: {}'.format(ambiente),list(collected_intersecting_elements)]
-# Iterate over the elements
+    # Iterate over the elements
     categorias_em_PTBR = ['Paredes', 'Pisos', 'Forros']
     categorias_relevantes = [
         str(revit.BuiltInCategory.OST_Floors),
         str(revit.BuiltInCategory.OST_Walls),
         str(revit.BuiltInCategory.OST_Ceilings)
-                  ]
+    ]
     cont_elem = 0
     print('ENCONTRADOS os seguintes objetos:\n\n')
-    for element in collected_intersecting_elements:     # Do something with the filtered elements
+    for element in intersecting_elements:
         # print(element.get_Parameter(revit.BuiltInParameter.ELEM_CATEGORY_PARAM).AsValueString())
         try:
-            if any(categoria == str(element.Category.BuiltInCategory) for categoria in categorias_relevantes):
+            if any(str(element.Category.BuiltInCategory) == categoria for categoria in categorias_relevantes):
                 print('{}, {}, cód. ID {}'.format(element.Name, element.Category.Name, element.Id))
                 cont_elem += 1
-        # try:
-        #     if any(superficie == element.Category.Name for superficie in categorias_interessam):
-        #         print('{}, {}, cód. ID {}'.format(element.Name, element.Category.Name, element.Id))
-        #         cont_elem+=1
+                element_type_id = element.GetTypeId()
+                element_type = doc.GetElement(element_type_id)
+                estrut_element = revit.HostObjAttributes.GetCompoundStructure(element_type)
+                quant_camadas_estrut = estrut_element.LayerCount
+                camadas_estrut = estrut_element.GetLayers()
+                for camada in camadas_estrut:
+                    try:
+                        # caso de pisos:
+                        if camada.Function.ToString() == 'Finish2' and element.Category.Name == 'Paredes':  # uma forma de double check: tanto q a camada da parede é de fato de revestimento tipo Acabamento2 (a última na hierarquia),
+                            id_mat_revest_piso = int(camada.MaterialId.ToString())
+                            # acessar objeto type Material dentre lista Materiais projeto a partir do id mat. atribuído à camada de revestimento Finish2 interna
+                            material_pelo_id_revest_piso = doc.GetElement(revit.ElementId(id_mat_revest_piso))
+                            print('aqui')
+                            print(material_pelo_id_revest_piso.Name, element.Name)
+                            for material in materiais:
+                                if material.Id == camada.MaterialId:
+                                    revest = material
+                                    print('ok, material associado a parede:',revest.Name)
+                    #caso de forros e paredes:
+                        elif camada.Function.ToString() == 'Finish2' and camada.LayerId == quant_camadas_estrut-1:
+                        #ou: (posso deixar mais explicito que to aplicando a piso forro e parede na condicao chamada em vez de usar a regra sobre hierarquia/index das camadas
+                        # elif camada.Function.ToString() == 'Finish2' and element.Category.Name == 'Piso' ou forro
+                            print('isso é forro ou parede')
+
+                    except AttributeError as e:
+                        print('erro ao tentar printar nome do objeto:', piso.Id, e)
         except AttributeError as e:
             # print('-'*50,element.Name,e)
             pass
-    print('TOTAL: {} elementos construtivos de interesse em {}{}'.format(cont_elem, ambiente_name, '-'*50))
-    print('\n')
-
-
+            # print('TOTAL: {} elementos construtivos de interesse em {}{}'.format(cont_elem, ambiente_name, '-'*50))
+            # print('\n')
+            # COLETA/IDENTIFICA MATERIAIS DAS CAMADAS DE REVESTIMENTO DE PISOS
   # AQUI VAI SER O CODIGO COMPLETO, COM UM ITERADOR Q DENTRO DELE CONTEM OS 3 CASOS:PISO/FOORO/PAREDE E NO FIM ATRIBUI O COD POR UMA TRANSACTION.
-# for elemento in todos_elem_constr.WhereElementIsElementType():
-#     if elemento is parede
-#     elif ou if? elemento is piso ou forro
+
 # # t = revit.Transaction(doc, "aplicar cod revest a ambiente")
 # # t.Start()
-# # CODREVEST_PAREDES.Set(material_teste_ID)
+# # cod_paredes.Set(material_teste_ID)
 # # t.Commit()
 
 
