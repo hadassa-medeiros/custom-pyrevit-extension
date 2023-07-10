@@ -20,7 +20,7 @@ paredes_instancias = paredes_collector.WhereElementIsNotElementType().ToElements
 todos_elem_constr = [pisos_collector, forros_collector, paredes_collector]
 
 ambientes_em_teste = []
-ids = [1123256, 1123259, 1123262]
+ids = [1123256, 1123259, 1123262, 1502389, 618033]
 for id in ids:
     amb = doc.GetElement(revit.ElementId(id))
     ambientes_em_teste.append(amb)
