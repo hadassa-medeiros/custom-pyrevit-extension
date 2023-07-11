@@ -15,7 +15,9 @@ app = __revit__.Application
 group_name = 'Códigos'
 # def_groups = DB.DefinitionFile.Groups(group_name)
 def_groupss = DB.DefinitionGroup.Definitions
+create_group = DB.DefinitionGroups.Create(DB.DefinitionGroups.Name,DB.DefinitionGroups)
 print(def_groupss)
+print(create_group)
 # open = Application.ControlledApplication.OpenSharedParameterFile
 print(open)
 # def_creation = DB.Definition.Create(revit.ExternalDefinitionCreationOptions('A', forgtype))
