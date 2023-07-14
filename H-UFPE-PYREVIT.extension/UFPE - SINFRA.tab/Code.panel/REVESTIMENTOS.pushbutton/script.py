@@ -10,6 +10,10 @@ ambientes_collector = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCate
 paredes_collector =   DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Walls)
 pisos_collector =     DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Floors)
 forros_collector =    DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Ceilings)
+niveis_collector =    DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Levels)
+# descobrir como coletar cada pavto, saber qual o pavto imed superior aquiele em q o ambiente stá,
+niveis = niveis_collector.WhereElementIsNotElementType().ToElements()
+
 
 
 
@@ -22,7 +26,7 @@ paredes_instancias = paredes_collector.WhereElementIsNotElementType().ToElements
 todos_elem_constr = [pisos_collector, forros_collector, paredes_collector]
 ambientes_em_teste = []
 # ids = [1123256, 1123259, 1123262, , 618033, 1123955, 1123958]
-ids = [2242637] #copa mezanino
+ids = [1502389, 1457753, 1457750] #copa mezanino
 
 for id in ids:
     amb = doc.GetElement(DB.ElementId(id))
@@ -30,7 +34,11 @@ for id in ids:
 print('Localizadas XYZ bounding box dos seguintes elementos:')
 
 for amb in ambientes_em_teste:
-    lista = []
+    altura_padrao_amb_offset = int(3 * 3.28084)
+    amb_lim_sup = amb.get_Parameter(DB.BuiltInParameter.ROOM_UPPER_LEVEL)
+    amb_desloc_sup = amb.get_Parameter(DB.BuiltInParameter.ROOM_UPPER_OFFSET)
+    print(amb_lim_sup, type(amb_desloc_sup))
+    lista_mats_paredes = []
     amb_level = amb.Level.Name
     amb_id = amb.Id.ToString()
     amb_name = amb.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString()
@@ -103,7 +111,7 @@ for amb in ambientes_em_teste:
                         if categ == paredes_categ:
                             print(elem.Name, elem.Id)
                             mat_parede = mat_rev_camada
-                            lista.append(mat_parede.Name)
+                            lista_mats_paredes.append(mat_parede.Id)
 
                         # t3 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
                         # t3.Start()
@@ -135,8 +143,48 @@ for amb in ambientes_em_teste:
     #                             t.Commit()
         except AttributeError:
             pass
-    lista = list(set(lista))
-    print(lista)
+    lista_mats_paredes = list(set(lista_mats_paredes))
+    if len(lista_mats_paredes) == 2:
+        t3 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
+        t3.Start()
+        cod_paredes.Set(lista_mats_paredes[0])
+        cod_paredes2.Set(lista_mats_paredes[1])
+        t3.Commit()
+    elif len(lista_mats_paredes) == 3:
+        t3 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
+        t3.Start()
+        cod_paredes.Set(lista_mats_paredes[0])
+        cod_paredes2.Set(lista_mats_paredes[1])
+        cod_paredes3.Set(lista_mats_paredes[2])
+        t3.Commit()
+    else:
+        t3 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
+        t3.Start()
+        cod_paredes.Set(lista_mats_paredes[0])
+        t3.Commit()
+
+
+    for n in range(len(niveis)):
+        try:
+            nome_nivel = niveis[n].Name
+            id_nivel = niveis[n].Id
+            altura_absoluta_nivel = niveis[n].get_Parameter(DB.BuiltInParameter.LEVEL_ELEV).AsDouble()
+            # print('A altura absoluta do nivel {} é {}'.format((niveis[n]).Name, altura_absoluta_nivel))
+            pe_esquerdo_nivel = (niveis[n + 1].get_Parameter(DB.BuiltInParameter.LEVEL_ELEV).AsDouble()) - (
+                niveis[n].get_Parameter(DB.BuiltInParameter.LEVEL_ELEV).AsDouble())
+            print('O pé esquerdo do pavto {} é: {}'.format(nome_nivel, pe_esquerdo_nivel))
+            print(type(pe_esquerdo_nivel))
+            if id_nivel == amb.LevelId:
+                print('yes')
+                t4 = DB.Transaction(doc, 'mudar limite vertical ambientes')
+                t4.Start()
+                amb_lim_sup.Set(id_nivel)
+                amb_desloc_sup.Set(pe_esquerdo_nivel-.7)
+                t4.Commit()
+        except ValueError:
+            pass
+
+            print('offset do ambiente modifcado.')
     # print(len(lista))
     # lista = list(set(lista))
     # print('Após remoção de duplicados, a quantidade de materiais de revestimento '
