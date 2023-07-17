@@ -216,7 +216,6 @@ for amb in ambientes_em_teste:
         cod_paredes.Set(lista_mats_paredes[0])
         t3.Commit()
 
-
     # print(len(lista))
     # lista = list(set(lista))
     # print('Após remoção de duplicados, a quantidade de materiais de revestimento '
