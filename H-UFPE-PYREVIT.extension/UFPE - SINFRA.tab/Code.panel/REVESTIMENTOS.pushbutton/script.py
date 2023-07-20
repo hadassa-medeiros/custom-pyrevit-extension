@@ -19,7 +19,6 @@ pisos = pisos_collector.ToElements()
 forros = forros_collector.ToElements()
 paredes = paredes_collector.ToElements()
 paredes_instancias = paredes_collector.WhereElementIsNotElementType().ToElements()
-todos_elem_constr = [pisos_collector, forros_collector, paredes_collector]
 
 forros_categ = str(DB.BuiltInCategory.OST_Ceilings)
 paredes_categ = str(DB.BuiltInCategory.OST_Walls)
@@ -31,14 +30,18 @@ ambientes_em_teste = []
 # 1123256, 1123259, 1123262, 618033, 1123955, 1123958, 1502389, 1457753, 1457750,
 # ids = [1977895, 1977898]
 ids = [336972, 336975]
+ids_2pav = [1456878, 1456726, 1457503, 1456893, 1966174, 1504489,
+       1456890, 1456589, 1457521, 1457773,1457776, 1457779, 1456887, 1456896, 1456899, 1456902, 1456905, 1457797,
+       1457791, 1456732, 1456751, 1456847, 1456884, 1456844, 1456881, 1456741, 1456741, 1456761, 1456838, 1493649,
+       1457816, 1457750, 1457753]
 
 # ids = [1502389, 1457753, 1457750] #copa mezanino
-for id in ids:
+for id in ids_2pav:
     amb = doc.GetElement(DB.ElementId(id))
     ambientes_em_teste.append(amb)
 print('Localizadas XYZ bounding box dos seguintes elementos:')
 
-for amb in ambientes:
+for amb in ambientes_em_teste:
 # for amb in ambientes_em_teste:
     altura_padrao_amb_offset = int(3 * 3.28084)
     amb_lim_sup = amb.get_Parameter(DB.BuiltInParameter.ROOM_UPPER_LEVEL)
@@ -49,7 +52,11 @@ for amb in ambientes:
     amb_elem = doc.GetElement(DB.ElementId(int(amb_id)))
     amb_area_str = amb.LookupParameter('Área').AsValueString()
     amb_area = float((amb_area_str)[:5])
-    # fator_multipl_m2_para_double = (amb.LookupParameter('Área').AsDouble()) / amb_area
+    amb_acab_forro = amb.get_Parameter(DB.BuiltInParameter.ROOM_FINISH_CEILING)
+    amb_acab_parede = amb.get_Parameter(DB.BuiltInParameter.ROOM_FINISH_WALL)
+    amb_acab_piso = amb.get_Parameter(DB.BuiltInParameter.ROOM_FINISH_FLOOR)
+
+# fator_multipl_m2_para_double = (amb.LookupParameter('Área').AsDouble()) / amb_area
     amb_bbox = amb.get_BoundingBox(doc.ActiveView)
     amb_outline = DB.Outline(amb_bbox.Min,amb_bbox.Max)  # é a outline que se passa como arg pro método DB.BoundingBoxIntersectsFilter (e não um objeto tipo BoundingBoxXYZ
 
@@ -106,28 +113,23 @@ for amb in ambientes:
 
                 for camada in camadas:
                     # a lista de critérios (tewmporariamente) que atuarão como filtro
-                    is_camada_acabamento_ou_membrana = any(str(
-                        camada.Function.ToString()) == funcao_camada for funcao_camada in ['Finish2', 'Membrane']
+                    is_camada_acabamento = any(str(
+                        camada.Function.ToString()) == funcao_camada for funcao_camada in ['Finish1', 'Finish2', 'Membrane']
                                                            )
                     is_camada_zero   = camada.LayerId == 0
                     is_camada_ultima = camada.LayerId == elem_estrut.LayerCount - 1
-                    #essa condição abaixo não é ideal, é apenas temporária, pois foi necessário p/ que nao fosse incluido como material de revestimento
-                    # o "granito polido" da divisoria dos wcs, no térreo do projeto piloto (CIn - Bloco E). A refinar condição para que seja
-                    # aplicávle em outros casos/edificações na universidade
-                    #esse 0.1 é em double, e não em cm. em cm é aprox 2 a 3cm
-                    conj_regras_PISO = [is_camada_acabamento_ou_membrana, is_camada_zero]
+                    conj_regras_PISO = [is_camada_acabamento, is_camada_zero]
                     #and elem_type.Width > 0.05
                     # print('a camada superficial do ambiente {} é a index {}, {}'.format(amb_name, camada.LayerId, funcao))
                     mat_rev_camada = doc.GetElement(DB.ElementId(int(camada.MaterialId.ToString())))
                     marca = mat_rev_camada.get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
                     tolerancia_area = (amb_area * .85 < area_elem < amb_area * 1.2)
 
-
-                    possibilidades_forro = [is_camada_ultima, is_camada_acabamento_ou_membrana, tolerancia_area]
+                    possibilidades_forro = [is_camada_ultima, is_camada_acabamento, tolerancia_area]
                     # mas provavelmente vai ser interessante passar em ao menos 2 desses criterios.
                     # funcoes_camada_filtro or camada.LayerId == quant_camadas - 1 or camada.LayerId == 0 and elem_type.Width > 0.1:
-                    if categ == paredes_categ and is_camada_acabamento_ou_membrana:
-                        print(elem.Name, elem.Id.ToString())
+                    if categ == paredes_categ and is_camada_acabamento:
+                        # print(elem.Name, elem.Id.ToString())
                         mat_parede = mat_rev_camada
                         lista_mats_paredes.append(mat_parede.Id)
                     #                         print('material PAREDE em {}: {}'.format(amb_name, mat_parede.Name))
@@ -136,57 +138,33 @@ for amb in ambientes:
                             print('o forro do ambiente {} é: {}, {}, ID nº {}'.format(amb_name, elem.Name,
                                                                                       elem.Category.Name, elem.Id))
                             mat_forro = mat_rev_camada
+                            print(marca)
                             t = DB.Transaction(doc, "aplicar cod revest forro a ambiente")
                             t.Start()
                             cod_forro.Set(mat_forro.Id)
+                            amb_acab_forro.Set(marca)
                             t.Commit()
-
                     elif categ == pisos_categ:
-                        if is_camada_acabamento_ou_membrana:
+                        if is_camada_acabamento:
                             print('o piso do ambiente {} é: {}, ID nº {}'.format(
                             amb_name, elem.Name, elem.Id))
                             mat_piso = mat_rev_camada
-                            lista_mats_piso.append(mat_piso)
+                            t = DB.Transaction(doc, "aplicar cod revest piso a ambiente")
+                            t.Start()
+                            cod_piso.Set(mat_piso.Id)
+                            amb_acab_piso.Set(marca)
+                            t.Commit()
                             # print('material de piso identificado:', mat_piso.Name)
-
                         elif is_camada_zero and camada.Function.ToString() == 'Structure':
                             print('o piso do ambiente {} não possui acabamento, e é: {}, ID nº {}'.format(
                                 amb_name, elem.Name, elem.Id))
                             mat_piso = mat_rev_camada
-                            lista_mats_piso.append(mat_piso)
-                            # print('material de piso identificado:', mat_piso.Name)
-
+                            t = DB.Transaction(doc, "aplicar cod revest piso a ambiente")
+                            t.Start()
+                            cod_piso.Set(mat_piso.Id)
+                            t.Commit()
                     # if any(condition == True for condition in conditions): #ok mas dessa forma é um OU (se satisfaz QUALQUER dos 4 critérios, ele "passa".
-    #                     #mas provavelmente vai ser interessante passar em ao menos 2 desses criterios.
-    #                     # funcoes_camada_filtro or camada.LayerId == quant_camadas - 1 or camada.LayerId == 0 and elem_type.Width > 0.1:
-    #                     if categ == paredes_categ:
-    #                         # print(elem.Name, elem.Id)
-    #                         mat_parede = mat_rev_camada
-    #                         lista_mats_paredes.append(mat_parede.Id)
-    # #                         print('material PAREDE em {}: {}'.format(amb_name, mat_parede.Name))
-    #                     elif categ == forros_categ:
-    #                         area_forro_str = elem.LookupParameter('Área').AsValueString()
-    #                         area_forro = float((area_forro_str)[:5])
-    #                         if amb_area * .9 < area_forro < amb_area * 1.1:
-    #                             print('o forro do ambiente {} é: {}, {}, ID nº {}'.format(amb_name,elem.Name,elem.Category.Name,elem.Id))
-    #                             mat_forro = mat_rev_camada
-    #                             t = DB.Transaction(doc, "aplicar cod revest forro a ambiente")
-    #                             t.Start()
-    #                             cod_forro.Set(mat_forro.Id)
-    #                             t.Commit()
-    #                     elif categ == pisos_categ and is_camada_zero:
-    #                         area_piso_str = elem.LookupParameter('Área').AsValueString()
-    #                         area_piso = float((area_piso_str)[:5])
-    #                         if amb_area * .85 < area_piso < amb_area * 1.2:
-    #                             print('o piso do ambiente {} é: {}, {}, ID nº {}'.format(
-    #                                 amb_name, elem.Name, elem.Category.Name, elem.Id))
-    #                             mat_piso = mat_rev_camada
-    #                             print('material de piso identificado:', mat_piso.Name)
-    #
-    #                             t = DB.Transaction(doc, "aplicar cod revest piso a ambiente")
-    #                             t.Start()
-    #                             cod_piso.Set(mat_piso.Id)
-    #                             t.Commit()
+
         except AttributeError:
             pass
     lista_mats_paredes = list(set(lista_mats_paredes))
@@ -194,7 +172,13 @@ for amb in ambientes:
     print(lista_mats_paredes) # ele sempre vai sobrescrever essa lista com a relação dos materiais de revestimento
     # encontrados no último ambiente pelo qual o iterador passou.
     print(lista_mats_piso)
-    if len(lista_mats_paredes) == 2:
+    if len(lista_mats_paredes) == 1:
+        t3 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
+        t3.Start()
+        cod_paredes.Set(lista_mats_paredes[0])
+        amb_acab_parede.Set(marca)
+        t3.Commit()
+    elif len(lista_mats_paredes) == 2:
         t3 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
         t3.Start()
         cod_paredes.Set(lista_mats_paredes[0])
@@ -207,68 +191,3 @@ for amb in ambientes:
         cod_paredes2.Set(lista_mats_paredes[1])
         cod_paredes3.Set(lista_mats_paredes[2])
         t3.Commit()
-    elif len(lista_mats_paredes) == 1:
-        t3 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
-        t3.Start()
-        cod_paredes.Set(lista_mats_paredes[0])
-        t3.Commit()
-
-    elif len(lista_mats_piso) == 1:
-        t = DB.Transaction(doc, "aplicar cod revest de PISO ao ambiente")
-        t.Start()
-        cod_piso.Set(lista_mats_piso[0])
-        t.Commit()
-    elif len(lista_mats_piso) > 1:
-        t = DB.Transaction(doc, "aplicar cod revest adicionais de PISO ao ambiente")
-        t.Start()
-        cod_piso.Set(lista_mats_piso[0])
-        cod_piso2.Set(lista_mats_piso[1])
-        t.Commit()
-
-
-
-    # print(len(lista))
-    # lista = list(set(lista))
-    # print('Após remoção de duplicados, a quantidade de materiais de revestimento '
-    #       'localizados no ambiente {} é {}'.format(amb_name, len(lista)))
-
-# for material in materiais:
-#     try:
-#         if material.Id == lista[0]:
-#             print(material.Name)
-#             revparede1 = material.Id
-#             t3 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
-#             t3.Start()
-#             cod_paredes.Set(revparede1)
-#             t3.Commit()
-#         elif material.Id == lista[1]:
-#             print(material.Name)
-#             revparede2 = material.Id
-#             t4 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
-#             t4.Start()
-#             cod_paredes2.Set(revparede2)
-#             t4.Commit()
-#         elif material.Id == lista[2]:
-#             print(material.Name)
-#             t5 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
-#             t5.Start()
-#             cod_paredes3.Set(material.Id)
-#             t5.Commit()
-#     except IndexError:
-#         pass
-
-
-# t3 = DB.Transaction(doc, "aplicar cod revest parede a ambiente")
-# t3.Start()
-# cod_paredes2.Set((lista[1]).Id)
-# cod_paredes3.Set((lista[2]).Id)
-# t.Commit()
-
-# isso abaixo são linhas iniciais pra caso queira levar a cabo a alternativa de fazer uma so transaction PRA APLICAr OS MATERIAIS coletados aos
-#respectivos campos de parametro, mas porvavelmente vai ser melhor fazer uma transaction por tipo de elemento construtivo (piso,parede,forro)
-# print(lista_final_materiais_por_ambiente
-# for i in lista_final_materiais_por_ambiente:
-#     t = DB.Transaction(doc, "aplicar cod revest parede a ambiente")
-#     t.Start()
-#     cod_paredes.Set(mat_rev_camada.Id)
-#     t.Commit()
