@@ -5,6 +5,7 @@ doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 meter_to_double = 3.2808399
+
 paredes_collector = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Walls)
 niveis_collector =    DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Levels)
 pisos_collector =     DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Floors)
@@ -74,7 +75,6 @@ for h in levels_ascend_order:
         # t.Start()
         # restr_sup.Set(level_above)
         # t.Commit()
-
 # PRA VOLTAR A USAR O ID COMO FORMA DE IDENTIFICAR O NIVEL QUE SE QUER TER COMO RESTRIÇAO SUPERIOR DAS PAREDES
 # for id in levels_ids:
 #     if id == restr_base.AsElementId():
