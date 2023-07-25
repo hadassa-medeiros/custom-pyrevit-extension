@@ -59,8 +59,6 @@ for amb in ambientes_em_teste:
 # fator_multipl_m2_para_double = (amb.LookupParameter('Área').AsDouble()) / amb_area
     amb_bbox = amb.get_BoundingBox(doc.ActiveView)
     amb_outline = DB.Outline(amb_bbox.Min,amb_bbox.Max)  # é a outline que se passa como arg pro método DB.BoundingBoxIntersectsFilter (e não um objeto tipo BoundingBoxXYZ
-
-    lista_mats_piso = []
     lista_mats_paredes = []
     for n in range(len(niveis)):
         try:
@@ -82,10 +80,9 @@ for amb in ambientes_em_teste:
             pass
 
             print('offset do ambiente modifcado.')
-
     cod_paredes = amb.LookupParameter('COD-REV-PAREDE_1')
     cod_paredes2 = amb.LookupParameter('COD-REV-PAREDE_2')
-    # cod_paredes3 = amb.LookupParameter('COD-REV-PAREDE_3')
+    # cod_paredes3 = amb.LookupParameter('COD-REV-PA  REDE_3')
     cod_piso = amb.LookupParameter('COD-REV-PISO_1')
     cod_piso2 = amb.LookupParameter('COD-REV-PISO_2')
     cod_forro = amb.LookupParameter('COD-REV-TETO_1')
@@ -95,7 +92,6 @@ for amb in ambientes_em_teste:
     amb_como_filtro = DB.BoundingBoxIntersectsFilter(amb_outline)# Create filter
     elementos_intersectantes = DB.FilteredElementCollector(doc).WherePasses(amb_como_filtro).ToElements()    # Use filter to retrieve elements
     # lista_python_collected_elements = ['Ambiente {}: {}'.format(amb),list(collected_intersecting_elements)]
-
     print('ENCONTRADOS os seguintes objetos:')
 
     for elem in elementos_intersectantes:
@@ -126,8 +122,6 @@ for amb in ambientes_em_teste:
                     tolerancia_area = (amb_area * .85 < area_elem < amb_area * 1.2)
 
                     possibilidades_forro = [is_camada_ultima, is_camada_acabamento, tolerancia_area]
-                    # mas provavelmente vai ser interessante passar em ao menos 2 desses criterios.
-                    # funcoes_camada_filtro or camada.LayerId == quant_camadas - 1 or camada.LayerId == 0 and elem_type.Width > 0.1:
                     if categ == paredes_categ and is_camada_acabamento:
                         # print(elem.Name, elem.Id.ToString())
                         mat_parede = mat_rev_camada
@@ -168,10 +162,8 @@ for amb in ambientes_em_teste:
         except AttributeError:
             pass
     lista_mats_paredes = list(set(lista_mats_paredes))
-    lista_mats_piso = list(set(lista_mats_piso))
     print(lista_mats_paredes) # ele sempre vai sobrescrever essa lista com a relação dos materiais de revestimento
     # encontrados no último ambiente pelo qual o iterador passou.
-    print(lista_mats_piso)
     if len(lista_mats_paredes) == 1:
         t3 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
         t3.Start()
