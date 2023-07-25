@@ -29,14 +29,14 @@ categorias_relevantes = [forros_categ, paredes_categ, pisos_categ]
 ambientes_em_teste = []
 # 1123256, 1123259, 1123262, 618033, 1123955, 1123958, 1502389, 1457753, 1457750,
 # ids = [1977895, 1977898]
-ids = [336972, 336975]
+ids = [1977919]
 ids_2pav = [1456878, 1456726, 1457503, 1456893, 1966174, 1504489,
        1456890, 1456589, 1457521, 1457773,1457776, 1457779, 1456887, 1456896, 1456899, 1456902, 1456905, 1457797,
        1457791, 1456732, 1456751, 1456847, 1456884, 1456844, 1456881, 1456741, 1456741, 1456761, 1456838, 1493649,
        1457816, 1457750, 1457753]
 
 # ids = [1502389, 1457753, 1457750] #copa mezanino
-for id in ids_2pav:
+for id in ids:
     amb = doc.GetElement(DB.ElementId(id))
     ambientes_em_teste.append(amb)
 print('Localizadas XYZ bounding box dos seguintes elementos:')
@@ -170,6 +170,7 @@ for amb in ambientes_em_teste:
         cod_paredes.Set(lista_mats_paredes[0])
         amb_acab_parede.Set(marca)
         t3.Commit()
+        print('OK')
     elif len(lista_mats_paredes) == 2:
         t3 = DB.Transaction(doc, "aplicar cods revest adicionais de parede ao ambiente")
         t3.Start()
