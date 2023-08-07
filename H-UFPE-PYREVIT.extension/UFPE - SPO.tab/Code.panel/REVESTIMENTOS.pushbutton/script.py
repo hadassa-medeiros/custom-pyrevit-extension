@@ -35,18 +35,6 @@ double_to_meter_divisor = 3.28084
 
 for room in rooms:
     try:
-
-    # IN PROGRESS----------
-        # Shared parameters created to store room's finish materials IDs
-        # (unique-per-project numeric identifiers), alternative to the builtin parameters ROOM_FINISH_****
-        # wall_finish = room.LookupParameter('COD-REV-PAREDE_1')
-        # wall_finish2 = room.LookupParameter('COD-REV-PAREDE_2')
-        # # wall_finish3 = room.LookupParameter('COD-REV-PAREDE_3')
-        # floor_finish = room.LookupParameter('COD-REV-PISO_1')
-        # floor_finish2 = room.LookupParameter('COD-REV-PISO_2')
-        # ceiling_finish = room.LookupParameter('COD-REV-TETO_1')
-    # -----------------
-
         # Shared parameters created to store room's finish material Revit objects
         wall_finish = room.LookupParameter('REV_PAREDE_1')
         wall_finish2 = room.LookupParameter('REV_PAREDE_2')
