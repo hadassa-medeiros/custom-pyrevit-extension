@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
+import Autodesk.Revit.UI as UI
+from Autodesk.Revit.UI.Selection import ObjectType
 
+
+__title__     = "Revestimentos por ambiente"
+__author__    = "Hadassa Medeiros"
 doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
@@ -31,7 +36,7 @@ wall_materials_in_room = []
 
 double_to_meter_divisor = 3.28084
 
-# INSERIR CAIXA DE DIALOGO PRA O USUARIO SELECIONAR OS AMBIENTES AOS QUAIS QUER APLICAR O SCRIPT.
+
 
 for room in rooms:
     try:
@@ -177,3 +182,4 @@ for room in rooms:
     # Clearing the list of wall materials after going through each room.
     wall_materials_ids_list = []
     wall_materials_in_room = []
+
