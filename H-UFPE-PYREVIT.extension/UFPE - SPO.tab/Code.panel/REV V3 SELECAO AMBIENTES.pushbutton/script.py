@@ -105,7 +105,7 @@ for p in picked_elements:
 
                 for layer in layers:
                     layers_material = doc.GetElement(DB.ElementId(int(layer.MaterialId.ToString())))
-                    material_mark = layers_material.get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
+                    mark = layers_material.get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
                     # The list of general criteria that will work as a filter to collect the wanted layers (finishing layers) of each construction element:
                     is_layer_finish = any(str(layer.Function.ToString()) == layer_function for layer_function in ['Finish1', 'Finish2', 'Membrane'])
                     is_layer_last = (layer.LayerId == elem_structure.LayerCount - 1)
@@ -121,6 +121,8 @@ for p in picked_elements:
                         # print(elem.Name, elem.Id.ToString())
                         wall_material = layers_material
                         wall_materials_in_room.append(wall_material)
+                        wall_materials_ids_list.append(wall_material.Id)
+                        # print(wall_material.Name.AsValueString())
 
                     elif elem_category == ceilings_category:
                         if any(possibility == True for possibility in ceiling_possibilities):
@@ -129,10 +131,10 @@ for p in picked_elements:
                             t = DB.Transaction(doc, "applying ceiling finish material to room's parameter")
                             t.Start()
                             ceiling_finish.Set(ceiling_material.Id)
-                            rooms_ceiling_finish_id.Set(material_mark)
+                            rooms_ceiling_finish_id.Set(mark)
                             t.Commit()
 
-                            print('Material mark number {} successfuly applied'.format(material_mark))
+                            print('Material mark number {} successfuly applied'.format(mark))
                     elif elem_category == floors_category:
                         if is_layer_finish:
                             # print("Room {}'s floor is: {}, ID # {}".format(room_name, elem.Name, elem.Id))
@@ -140,7 +142,7 @@ for p in picked_elements:
                             t = DB.Transaction(doc, "applying floor finish material to room's parameter")
                             t.Start()
                             floor_finish.Set(floor_material.Id)
-                            rooms_floor_finish_id.Set(material_mark)
+                            rooms_floor_finish_id.Set(mark)
                             t.Commit()
                             # the alternative below doesn't work for projects in which the structural layer of the floor is below the level where the room is placed, because the room's bounding box will have it's bottom surface above where the top surface of the structural floor, in other words the floor object will be outside the bounding box limits of the room, thus won't be counted as an intersecting element.
                         elif is_layer_zero and layer.Function.ToString() == 'Structure':
@@ -156,56 +158,84 @@ for p in picked_elements:
         except AttributeError:
             pass
 
-    wall_materials_in_room = list(set(wall_materials_in_room))
-    print(wall_materials_in_room)
+
+    for w in wall_materials_in_room:
+        wall_materials_ids_list.append(w.Id)
+
+    w_m_ids = list(set(wall_materials_ids_list))
+    print(w_m_ids)
     # Applying wall materials to respective parameters in the cases of one or many wall finishes by room.
+    no_material_name = 'N/A'
+    no_material = [material for material in materials if material.Name == no_material_name][0]
+    # i want to retrieve the information of a MATERIAL object but im using a list of the material IDS object to apply
+    # them to wall_finish parameters. Is it better to create a dict where key = Material.ID and value = Material (the material object from revit)
+    # so i can reference key when i want the ID information and the value when i need info that i can only get from the material object?
     try:
-        if len(wall_materials_in_room) == 0:
+        mark = (w_m_ids[0]).get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
+        mark2 = (w_m_ids[1]).get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
+        mark3 = (w_m_ids[2]).get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
+
+    except IndexError:
+        pass
+
+    try:
+        if len(w_m_ids) == 0: # No finishes found
             t = DB.Transaction(doc, "applying wall finish material to the respective room's parameter")
             t.Start()
+
+            wall_finish.Set(no_material.Id)
             rooms_wall_finish_id.Set('')
+
             t.Commit()
 
-        if len(wall_materials_in_room) == 1:
-            material_mark = (wall_materials_in_room[0]).get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
+        if len(w_m_ids) == 1:
 
             t = DB.Transaction(doc, "applying additional wall finish material to the respective room's parameter")
             t.Start()
-            wall_finish.Set(wall_materials_in_room[0].Id)
-            rooms_wall_finish_id.Set(material_mark)
+
+            wall_finish.Set(w_m_ids)
+            wall_finish2.Set(no_material.Id)
+            wall_finish3.Set(no_material.Id)
+
+            rooms_wall_finish_id.Set(mark)
+            rooms_wall_finish_id_2.Set('')
+            rooms_wall_finish_id_3.Set('')
+
             t.Commit()
 
         elif len(wall_materials_in_room) == 2:
-            material_mark = (wall_materials_in_room[0]).get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
-            material_mark2 = (wall_materials_in_room[1]).get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
 
             t3 = DB.Transaction(doc, "applying additional wall finish material to the respective room's parameter")
             t3.Start()
+
             wall_finish.Set((wall_materials_in_room[0]).Id)
             wall_finish2.Set((wall_materials_in_room[1]).Id)
-            rooms_wall_finish_id.Set(material_mark)
-            rooms_wall_finish_id_2.Set(material_mark2)
-            # wall_finish3.Set(wall_materials_list[2])
+            wall_finish3.Set(no_material.Id)
+
+            rooms_wall_finish_id.Set(mark)
+            rooms_wall_finish_id_2.Set(mark2)
+            rooms_wall_finish_id_3.Set('')
+
             t3.Commit()
+
         elif len(wall_materials_in_room) == 3:
-            material_mark = (wall_materials_in_room[0]).get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
-            material_mark2 = (wall_materials_in_room[1]).get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
-            material_mark3 = (wall_materials_in_room[2]).get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
 
             t3 = DB.Transaction(doc, "applying additional wall finish material to the respective room's parameter")
             t3.Start()
+
             wall_finish.Set((wall_materials_in_room[0]).Id)
             wall_finish2.Set((wall_materials_in_room[1]).Id)
             wall_finish3.Set((wall_materials_in_room[2]).Id)
-            rooms_wall_finish_id.Set(int(material_mark))
-            rooms_wall_finish_id_2.Set(material_mark2)
-            rooms_wall_finish_id_3.Set(material_mark3)
+            rooms_wall_finish_id.Set(mark)
+            rooms_wall_finish_id_2.Set(mark2)
+            rooms_wall_finish_id_3.Set(mark3)
 
             t3.Commit()
     except AttributeError:
         print('Algum dos parâmetros compartilhados de revestimento de parede não foi inserido como parâmetro de projeto')
         break
-    # Clearing the list of wall materials after going through each room.
+
+    # Reseting the list of wall materials after going through each room.
     wall_materials_ids_list = []
     wall_materials_in_room = []
 
