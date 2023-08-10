@@ -45,27 +45,31 @@ wall_mats = {}
 double_to_meter_divisor = 3.28084
 
 
+# tentativa de gerar informaçao formatada 'numero - nome' por ambiente, a caixa de diálogo do usuario, em vez de apenas o nome
+
 # INSERIR CAIXA DE DIALOGO PRA O USUARIO SELECIONAR OS AMBIENTES AOS QUAIS QUER APLICAR O SCRIPT.
 
-
-# picked_elements = uidoc.Selection.PickObjects(sel.ObjectType.Element, "Selecione os ambientes:")
-
-
 # TENTANDO PERMITIR AO USUARIO ESCOLHER O(S) AMBIWENTE(S) NAO SELECIONANDO-OS NA VISTA ATIVA, MAS A PARTIR DA LISTA DE TODOS OS AMBIENTE NO PROJETO:
-room_names = [room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString() for room in rooms]
-selected_rooms = forms.SelectFromList.show(room_names, button_name='Select Rooms', multiselect=True)
+# room_names = [room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString() for room in rooms]
+# selected_rooms = forms.SelectFromList.show(room_names, room_info, button_name='Select Rooms', multiselect=True)
 
+room_numbers_and_names = ["{} - {}".format(
+    room.get_Parameter(DB.BuiltInParameter.ROOM_NUMBER).AsString(),
+    room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString()
+) for room in rooms]
 
-# for p in picked_elements:
-#     room = doc.GetElement(p.ElementId)
-
+# Show a checkbox list for room selection
+selected_rooms_and_names = forms.SelectFromList.show(room_numbers_and_names, button_name='Select Rooms', multiselect=True)
 
     # Iterate through selected room names and get the corresponding room elements
-for selected_room_name in selected_rooms:
+
+selected_room_names = [selected.split(" - ")[1] for selected in selected_rooms_and_names] #refers only to the relement's name, for each element selected.
+
+for selected_room_name in selected_room_names:
     selected_room_element = next(room for room in rooms if
                                  room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString() == selected_room_name)
-    print(type(room))
-    room = doc.GetElement(room.ElementId)
+    print('-------------------------------',selected_room_name,'-------------------------------')
+    room = doc.GetElement(selected_room_element.Id)
 
     wall_finish = room.LookupParameter('REV_PAREDE_1')
     wall_finish2 = room.LookupParameter('REV_PAREDE_2')
@@ -132,12 +136,11 @@ for selected_room_name in selected_rooms:
                     ceiling_possibilities = [is_layer_finish, is_layer_last]
 
                     if elem_category == walls_category and is_layer_finish:
-                        print(elem.Name, elem.Id.ToString())
                         wall_material = layers_material
-                        print(wall_material.Name)
+                        print(elem.Name, elem.Id.ToString(), wall_material.Name)
                         wall_materials_in_room.append(wall_material.Name)
                         wall_materials_ids_list.append(wall_material.Id)
-                        wall_mats[wall_material.Name] = wall_material.Id
+                        wall_mats[wall_material.Name] = wall_material.Id.ToString()
                         # print(wall_material.Name.AsValueString())
 
                     elif elem_category == ceilings_category:
@@ -150,7 +153,7 @@ for selected_room_name in selected_rooms:
                             rooms_ceiling_finish_id.Set(mark)
                             t.Commit()
 
-                            print('Material mark number {} successfuly applied'.format(mark))
+                            # print('Material mark number {} successfuly applied'.format(mark))
                     elif elem_category == floors_category:
                         if is_layer_finish:
                             # print("Room {}'s floor is: {}, ID # {}".format(room_name, elem.Name, elem.Id))
