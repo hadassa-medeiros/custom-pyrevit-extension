@@ -140,7 +140,7 @@ for selected_room_name in selected_room_names:
                         print(elem.Name, elem.Id.ToString(), wall_material.Name)
                         wall_materials_in_room.append(wall_material.Name)
                         wall_materials_ids_list.append(wall_material.Id)
-                        wall_mats[wall_material.Name] = wall_material.Id.ToString()
+                        wall_mats[wall_material.Name] = wall_material.Id.ToString() # they will be retrieved later to be assigned for each room's parameter
                         # print(wall_material.Name.AsValueString())
 
                     elif elem_category == ceilings_category:
@@ -176,12 +176,58 @@ for selected_room_name in selected_room_names:
 
         except AttributeError:
             pass
-
     print(wall_mats)
-    print(wall_materials_in_room)
+    # print(wall_materials_in_room)
     # for w in wall_materials_in_room:
     #     wall_materials_ids_list.append(w.Id)
-    #
+
+    # print(type(wall_mats.items()[0][0]))
+
+
+    #     mark2 = (w_m_ids[1]).get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
+    #     mark3 = (w_m_ids[2]).get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
+    mat_element1 = doc.GetElement(DB.ElementId(int(wall_mats.items()[0][1])))
+    mark1 = mat_element1.get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
+
+    mat_element2 = doc.GetElement(DB.ElementId(int(wall_mats.items()[1][1])))
+    mark2 = mat_element2.get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
+    print(mark2)
+    # mat_element3 = doc.GetElement(DB.ElementId(int(wall_mats.items()[2][1])))
+    # mark3 = mat_element3.get_Parameter(DB.BuiltInParameter.ALL_MODEL_MARK).AsString()
+    # print(mark1, wall_mats.items()[0][0])
+
+
+
+   # vou ter q fazer o get element c base no Name do material p poder atribuir o tipo Material ao param wall_finish! qd eu nao coleto o .Name la do for loop da pare3de, por algum moptivo ele deixa duplicado no dicionario gerado. e qd eu uso o nome como key, ele "limpa" ,dentro do dict, os repetidos.
+    # mark2 = doc.GetElement(DB.ElementId(int(wall_mats[1][1])))
+    # mark3 = doc.GetElement(DB.ElementId(int(wall_mats[2][1])))
+
+    t3 = DB.Transaction(doc, "applying additional wall finish material to the respective room's parameter")
+    t3.Start()
+
+    wall_finish.Set(mat_element1.Id)
+    wall_finish2.Set(mat_element1.Id)
+    # wall_finish3.Set(wall_mats.items()[2][0].Id)
+
+    rooms_wall_finish_id.Set(mark1)
+    rooms_wall_finish_id_2.Set(mark2)
+
+
+    t3.Commit()
+
+
+
+    # Reseting the list of wall materials after going through each room.
+    # wall_materials_ids_list = []
+    # wall_materials_in_room = []
+    wall_mats = {}
+
+    print('Finished')
+
+
+
+
+
     # w_m_ids = list(set(wall_materials_ids_list))
     # print(w_m_ids)
     # # Applying wall materials to respective parameters in the cases of one or many wall finishes by room.
