@@ -62,8 +62,8 @@ room_numbers_and_names = ["{} - {}".format(
 selected_rooms_and_names = forms.SelectFromList.show(room_numbers_and_names, button_name='Select Rooms', multiselect=True)
 
     # Iterate through selected room names and get the corresponding room elements
-
 selected_room_names = [selected.split(" - ")[1] for selected in selected_rooms_and_names] #refers only to the relement's name, for each element selected.
+
 
 for selected_room_name in selected_room_names:
     selected_room_element = next(room for room in rooms if
