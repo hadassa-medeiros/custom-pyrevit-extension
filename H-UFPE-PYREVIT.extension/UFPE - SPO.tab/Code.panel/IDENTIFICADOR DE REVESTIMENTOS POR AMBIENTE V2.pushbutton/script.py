@@ -44,7 +44,7 @@ wall_mats = {}
 info_per_room = {}
 double_to_meter_divisor = 3.28084
 
-
+rooms_total = 0 #Quantity of rooms analyzed.
 room_numbers_and_names = ["{} - {}".format(
     room.get_Parameter(DB.BuiltInParameter.ROOM_NUMBER).AsString(),
     room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString()
@@ -61,8 +61,8 @@ selected_room_names = [selected.split(" - ")[1] for selected in selected_rooms_a
 for selected_room_name in selected_room_names:
     selected_room_element = next(room for room in rooms if
                                  room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString() == selected_room_name)
-    print('-------------------------------{}------------------------------'.format(selected_room_name))
     room = doc.GetElement(selected_room_element.Id)
+    print('-------------------------------{} - {}------------------------------'.format(room.Number, selected_room_name))
     wall_finish_param = room.LookupParameter('_REV_PAREDE_1')
     wall_finish2_param = room.LookupParameter('_REV_PAREDE_2')
     wall_finish3_param = room.LookupParameter('_REV_PAREDE_3')
@@ -105,7 +105,6 @@ for selected_room_name in selected_room_names:
             level_above_elev = level_above.get_Parameter(DB.BuiltInParameter.LEVEL_ELEV).AsDouble()
             floor_to_floor_height = level_above_elev - room_level_elev # This value is in the Revit's format AsDouble, not in meters.
             if room.Level.Id == level.Id and floor_to_floor_height > 0:
-                print(room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString())
                 t = DB.Transaction(doc, "Changing room's upper offset")
                 t.Start()
                 room_upper_offset.Set(floor_to_floor_height - .7)
@@ -128,7 +127,7 @@ for selected_room_name in selected_room_names:
 
             elem_type_name = elem_type.get_Parameter(DB.BuiltInParameter.ALL_MODEL_TYPE_NAME).AsString()
             elem_area = float((elem.LookupParameter('Área').AsValueString())[:5])
-            area_tolerance = (room_area * .9 < elem_area < room_area * 1.1)
+            area_tolerance = (room_area * .98 < elem_area < room_area * 1.02)
 
             # DEFINICOES:
             if 'REV' in elem_type_name or elem_category == ceilings_category:
@@ -144,10 +143,12 @@ for selected_room_name in selected_room_names:
                 type_id_str = elem_type.get_Parameter(DB.BuiltInParameter.WINDOW_TYPE_ID).AsString()
                 # print('{}, in {}-{} - marca de tipo: {}'.format(elem_category, room.Number, room_name, type_id_str))
 
+
                 if elem_category == walls_category:
                     wall_mats[elem_type_description] = type_id_str
 
                 elif elem_category == floors_category and area_tolerance:
+                    print(elem_type_name, elem.Id)
                     try:
                         t = DB.Transaction(doc, "applying floor finish material to room's parameter")
                         t.Start()
@@ -159,8 +160,8 @@ for selected_room_name in selected_room_names:
                         print('Conferir se especificação e código do elemento de piso {} estão associadas aos campos '
                               'Descrição e Marca de tipo, respectivamente'
                                   .format(elem_type_name))
-
                     t.Commit()
+
                 elif elem_category == ceilings_category and area_tolerance:
                     try:
 
@@ -181,6 +182,8 @@ for selected_room_name in selected_room_names:
 
     try:
         print('------------Revestimentos de parede identificados:-----------------')
+        if len(wall_mats) == 0:
+            print('NENHUM REVESTIMENTO DE PAREDE IDENTIFICADO')
 
         if len(wall_mats) == 1:
 
@@ -245,5 +248,8 @@ for selected_room_name in selected_room_names:
 
         wall_mats = {}
         print('-------------------------------------------------------------------------------------------------------')
+
     except IndexError:
         pass
+    rooms_total+=1
+print('{} ambientes foram analisados.'format(rooms_total))
