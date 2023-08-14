@@ -8,7 +8,7 @@ import clr
 clr.AddReference('RevitAPIUI')
 
 
-__title__     = "Revestimentos por ambiente"
+__title__     = "Identificar revestimentos por ambiente"
 __author__    = "Hadassa Medeiros"
 doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
@@ -81,7 +81,6 @@ for selected_room_name in selected_room_names:
     room_area_str = room.LookupParameter('Área').AsValueString()
     room_area = float((room_area_str)[:5])
 
-    print('Pé direito: {}m'.format(room_upper_offset.AsValueString()))
     # The following three room builtin paramaters were chosen to store only the numeric identifiers corresponding to the finishing materials collected (100-199 for floor finishes, 200-299 for wall finishes, 300-399 for ceiling finishes)
     rooms_ceiling_finish_id = room.get_Parameter(DB.BuiltInParameter.ROOM_FINISH_CEILING)
 
@@ -98,6 +97,29 @@ for selected_room_name in selected_room_names:
     room_as_filter = DB.BoundingBoxIntersectsFilter(room_outline)# Create filter
     intersecting_elem = DB.FilteredElementCollector(doc).WherePasses(room_as_filter).ToElements() # Using filter to retrieve elements
     # list_python_collected_elements = ['room {}: {}'.format(room),list(collected_intersecting_elements)]
+
+
+    for level in levels:
+        try:
+            level_above = levels[levels.index(level) + 1]
+            level_above_elev = level_above.get_Parameter(DB.BuiltInParameter.LEVEL_ELEV).AsDouble()
+            floor_to_floor_height = level_above_elev - room_level_elev # This value is in the Revit's format AsDouble, not in meters.
+            if room.Level.Id == level.Id and floor_to_floor_height > 0:
+                print(room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString())
+                t = DB.Transaction(doc, "Changing room's upper offset")
+                t.Start()
+                room_upper_offset.Set(floor_to_floor_height - .7)
+                t.Commit()
+                print("Upper offset parameter value of the room {} has been successfully modified to {}m.".format(room_name, ((floor_to_floor_height - .7)/double_to_meter_divisor)))
+            elif floor_to_floor_height == 0:
+                t = DB.Transaction(doc, "Changing room's upper offset")
+                t.Start()
+                room_upper_offset.Set(room_default_height_offset)
+                t.Commit()
+        except IndexError:
+            break
+
+
 
     for elem in intersecting_elem:
         try:
@@ -124,36 +146,53 @@ for selected_room_name in selected_room_names:
 
                 if elem_category == walls_category:
                     wall_mats[elem_type_description] = type_id_str
-
+# MENSAGEM DE ERRO POR CAMPO VAZIO NÃO ESTÁ APARECENDO AO EXECUTAR. EM VEZ DISSO, APARECE APENAS NENHUM CÓDIGO COMO type_id_str
                 elif elem_category == floors_category and area_tolerance:
-                    t = DB.Transaction(doc, "applying floor finish material to room's parameter")
-                    t.Start()
-                    floor_finish_param.Set(elem_type_description)
-                    rooms_floor_finish_id.Set(type_id_str)
-                    print('O código {} referente ao acabamento de piso {} foi aplicado ao ambiente {}'.format(type_id_str,
-                                                                                                              elem_type_description,
-                                                                                                              room_name))
+                    try:
+                        t = DB.Transaction(doc, "applying floor finish material to room's parameter")
+                        t.Start()
+                        floor_finish_param.Set(elem_type_description)
+                        rooms_floor_finish_id.Set(type_id_str)
+                        print('O código {} referente ao acabamento de piso {} foi aplicado ao ambiente {}'
+                              .format(type_id_str, elem_type_description, room_name))
+                    except TypeError:
+                        print('Conferir se especificação e código do elemento de piso {} estão associadas aos campos '
+                              'Descrição e Marca de tipo, respectivamente'
+                                  .format(elem_type_name))
+
                     t.Commit()
-
-                for layer in layers:
-                    # The list of general criteria that will work as a filter to collect the wanted layers (finishing layers) of each construction element:
-                    is_layer_finish = any(str(layer.Function.ToString()) == layer_function for layer_function in ['Finish1', 'Finish2', 'Membrane'])
-                    is_layer_last = (layer.LayerId == elem_structure.LayerCount - 1)
-                    is_layer_zero = layer.LayerId == 0
-
-                    # Combination of criteria for a layers' material to be collected as finishing material in a room's ceiling element:
-                    ceiling_possibilities = [is_layer_finish, is_layer_last]
-
-                    if elem_category == ceilings_category:
-                        if any(possibility == True for possibility in ceiling_possibilities):
-                            t = DB.Transaction(doc, "applying ceiling finish material to room's parameter")
-                            t.Start()
-                            ceiling_finish_param.Set(elem_type_description)
-                            rooms_ceiling_finish_id.Set(type_id_str)
-                            print('O código {} referente ao acabamento de forro {} foi aplicado ao ambiente {}'.format(type_id_str,
-                                                                                                                       elem_type_description,
-                                                                                                                       room_name))
-                            t.Commit()
+                elif elem_category == ceilings_category and area_tolerance:
+                    ceiling_id = type_id_str
+                    ceiling_type_description = elem_type_description
+                    # print(elem_type_name, elem.Id)
+                    t = DB.Transaction(doc, "applying ceiling finish material to room's parameter")
+                    t.Start()
+                    ceiling_finish_param.Set(ceiling_type_description)
+                    rooms_ceiling_finish_id.Set(ceiling_id)
+                    print('O código {} referente ao acabamento de forro {} foi aplicado ao ambiente {}'.format(type_id_str,
+                                                                                                           elem_type_description,
+                                                                                                           room_name))
+                    t.Commit()
+                # for layer in layers:
+                #     # The list of general criteria that will work as a filter to collect the wanted layers (finishing layers) of each construction element:
+                #     is_layer_finish = any(str(layer.Function.ToString()) == layer_function for layer_function in ['Finish1', 'Finish2', 'Membrane'])
+                #     is_layer_last = (layer.LayerId == elem_structure.LayerCount - 1)
+                #     is_layer_zero = layer.LayerId == 0
+                #
+                #     # Combination of criteria for a layers' material to be collected as finishing material in a room's ceiling element:
+                #     ceiling_possibilities = [is_layer_finish, is_layer_last]
+                #
+                #     if elem_category == ceilings_category and area_tolerance:
+                #         print(elem_type_name, elem.Id)
+                #         # if any(possibility == True for possibility in ceiling_possibilities):
+                #         t = DB.Transaction(doc, "applying ceiling finish material to room's parameter")
+                        # t.Start()
+                        # # ceiling_finish_param.Set(elem_type_description)
+                        # # rooms_ceiling_finish_id.Set(type_id_str)
+                        # # print('O código {} referente ao acabamento de forro {} foi aplicado ao ambiente {}'.format(type_id_str,
+                        # #                                                                                            elem_type_description,
+                        #                                                                                            room_name))
+                        # t.Commit()
 
 
         except AttributeError:
