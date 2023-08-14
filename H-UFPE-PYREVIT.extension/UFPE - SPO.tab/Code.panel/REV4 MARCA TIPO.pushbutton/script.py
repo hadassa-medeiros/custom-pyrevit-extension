@@ -61,7 +61,7 @@ selected_room_names = [selected.split(" - ")[1] for selected in selected_rooms_a
 for selected_room_name in selected_room_names:
     selected_room_element = next(room for room in rooms if
                                  room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString() == selected_room_name)
-    print('-------------------------------',selected_room_name,'-------------------------------')
+    print('-------------------------------{}------------------------------'.format(selected_room_name))
     room = doc.GetElement(selected_room_element.Id)
     wall_finish_param = room.LookupParameter('_REV_PAREDE_1')
     wall_finish2_param = room.LookupParameter('_REV_PAREDE_2')
@@ -126,7 +126,6 @@ for selected_room_name in selected_room_names:
                     wall_mats[elem_type_description] = type_id_str
 
                 elif elem_category == floors_category and area_tolerance:
-                    print('OK', elem_type_description, type_id_str)
                     t = DB.Transaction(doc, "applying floor finish material to room's parameter")
                     t.Start()
                     floor_finish_param.Set(elem_type_description)
@@ -224,5 +223,7 @@ for selected_room_name in selected_room_names:
             print('Aplicados os códigos {} ({}), {} ({}), {} ({})'.format(wall_id1, wall_finish1, wall_id2, wall_finish2, wall_id3, wall_finish3))
             t.Commit()
 
+        wall_mats = {}
+        print('-------------------------------------------------------------------------------------------------------')
     except IndexError:
         pass
