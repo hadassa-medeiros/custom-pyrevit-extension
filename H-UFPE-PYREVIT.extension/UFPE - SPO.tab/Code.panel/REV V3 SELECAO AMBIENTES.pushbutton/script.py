@@ -140,7 +140,7 @@ for selected_room_name in selected_room_names:
                         print(elem.Name, elem.Id.ToString(), wall_material.Name)
                         wall_materials_in_room.append(wall_material.Name)
                         wall_materials_ids_list.append(wall_material.Id)
-                        wall_mats[wall_material.Name] = wall_material.Id.ToString() # they will be retrieved later to be assigned for each room's parameter
+
                         # print(wall_material.Name.AsValueString())
 
                     elif elem_category == ceilings_category:
