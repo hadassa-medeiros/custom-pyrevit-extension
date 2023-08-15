@@ -8,7 +8,7 @@ import clr
 clr.AddReference('RevitAPIUI')
 
 
-__title__     = "Identificar revestimentos por ambiente"
+__title__     = "Revestimentos por ambiente"
 __author__    = "Hadassa Medeiros"
 doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
