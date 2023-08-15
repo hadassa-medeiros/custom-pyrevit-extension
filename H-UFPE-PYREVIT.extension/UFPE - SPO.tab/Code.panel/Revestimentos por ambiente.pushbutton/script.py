@@ -62,7 +62,7 @@ for selected_room_number in selected_room_numbers:
     selected_room_element = next(room for room in rooms if
                                  room.get_Parameter(DB.BuiltInParameter.ROOM_NUMBER).AsString() == selected_room_number)
     room = doc.GetElement(selected_room_element.Id)
-    print('-------------------------------{}------------------------------'.format(room.Number))
+    print('{}------------------------------'.format(room.Number))
     wall_finish_param = room.LookupParameter('Parede_REV_1')
     wall_finish2_param = room.LookupParameter('Parede_REV_2')
     wall_finish3_param = room.LookupParameter('Parede_REV_3')
@@ -155,10 +155,11 @@ for selected_room_number in selected_room_numbers:
                     try:
                         t = DB.Transaction(doc, "applying floor finish material to room's parameter")
                         t.Start()
+                        print('PISO:')
                         floor_finish_param.Set(elem_type_description)
                         rooms_floor_finish_id.Set(type_id_str)
-                        print('O código {} referente ao acabamento de piso {} foi aplicado ao ambiente {}'
-                              .format(type_id_str, elem_type_description, room_name))
+                        print('{} - {}'
+                              .format(type_id_str, elem_type_description))
                     except TypeError:
                         print('Conferir se especificação e código do elemento de piso {} estão associadas aos campos '
                               'Descrição e Marca de tipo, respectivamente'
@@ -171,11 +172,10 @@ for selected_room_number in selected_room_numbers:
                         # print(elem_type_name, elem.Id)
                         t = DB.Transaction(doc, "applying ceiling finish material to room's parameter")
                         t.Start()
+                        print('FORRO:')
                         ceiling_finish_param.Set(elem_type_description)
                         rooms_ceiling_finish_id.Set(type_id_str)
-                        print('O código {} referente ao acabamento de forro {} foi aplicado ao ambiente {}'.format(type_id_str,
-                                                                                                               elem_type_description,
-                                                                                                               room_name))
+                        print('{} - {}'.format(type_id_str, elem_type_description))
                     except:
                         pass
                     t.Commit()
@@ -184,7 +184,10 @@ for selected_room_number in selected_room_numbers:
             pass
 
     try:
-        print('------------Revestimentos de parede identificados:-----------------')
+
+
+
+        print('PAREDE:')
         if len(wall_mats) == 0:
             print('NENHUM REVESTIMENTO DE PAREDE IDENTIFICADO')
 
@@ -196,6 +199,7 @@ for selected_room_number in selected_room_numbers:
             t = DB.Transaction(doc,
                                "applying additional wall finish materials and IDs to the respective room's parameter")
             t.Start()
+            print('Aplicado o código')
             wall_finish_param.Set(wall_finish1)
             wall_finish2_param.Set('')
             wall_finish3_param.Set('')
@@ -204,7 +208,7 @@ for selected_room_number in selected_room_numbers:
             rooms_wall_finish_id_2.Set('')
             rooms_wall_finish_id_3.Set('')
 
-            print('Aplicado o código {} ({})'.format(wall_id1, wall_finish1))
+            print('{} ({})'.format(wall_id1, wall_finish1))
             t.Commit()
 
         elif len(wall_mats) == 2:
@@ -246,7 +250,7 @@ for selected_room_number in selected_room_numbers:
             rooms_wall_finish_id.Set(wall_id1)
             rooms_wall_finish_id_2.Set(wall_id2)
             rooms_wall_finish_id_3.Set(wall_id3)
-            print('Aplicados os códigos {} ({}), {} ({}), {} ({})'.format(wall_id1, wall_finish1, wall_id2, wall_finish2, wall_id3, wall_finish3))
+            print('{} ({}), {} ({}), {} ({})'.format(wall_id1, wall_finish1, wall_id2, wall_finish2, wall_id3, wall_finish3))
             t.Commit()
 
         wall_mats = {}
