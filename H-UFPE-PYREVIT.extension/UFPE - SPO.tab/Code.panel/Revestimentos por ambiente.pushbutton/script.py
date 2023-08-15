@@ -54,21 +54,21 @@ room_numbers_and_names = ["{} - {}".format(
 
 selected_rooms_and_names = forms.SelectFromList.show(room_numbers_and_names, button_name='Select Rooms', multiselect=True)
 
-# Iterate through selected room names and get the corresponding room elements
-selected_room_names = [selected.split(" - ")[1] for selected in selected_rooms_and_names] #refers only to the relement's name, for each element selected.
+# Iterate through selected room numbers (they are unique, unlike room names that can be repeated within the same model) and get the corresponding room elements
+selected_room_numbers = [selected.split(" - ")[0] for selected in selected_rooms_and_names] #refers only to the relement's name, for each element selected.
+selected_room_names = [selected.split(" - ")[1] for selected in selected_rooms_and_names]
 
-
-for selected_room_name in selected_room_names:
+for selected_room_number in selected_room_numbers:
     selected_room_element = next(room for room in rooms if
-                                 room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString() == selected_room_name)
+                                 room.get_Parameter(DB.BuiltInParameter.ROOM_NUMBER).AsString() == selected_room_number)
     room = doc.GetElement(selected_room_element.Id)
-    print('-------------------------------{} - {}------------------------------'.format(room.Number, selected_room_name))
-    wall_finish_param = room.LookupParameter('_REV_PAREDE_1')
-    wall_finish2_param = room.LookupParameter('_REV_PAREDE_2')
-    wall_finish3_param = room.LookupParameter('_REV_PAREDE_3')
-    floor_finish_param = room.LookupParameter('_REV_PISO_1')
-    floor_finish2_param = room.LookupParameter('_REV_PISO_2')
-    ceiling_finish_param = room.LookupParameter('_REV_FORRO_1')
+    print('-------------------------------{}------------------------------'.format(room.Number))
+    wall_finish_param = room.LookupParameter('Parede_REV_1')
+    wall_finish2_param = room.LookupParameter('Parede_REV_2')
+    wall_finish3_param = room.LookupParameter('Parede_REV_3')
+    floor_finish_param = room.LookupParameter('Piso_REV_1')
+    floor_finish2_param = room.LookupParameter('Piso_REV_2')
+    ceiling_finish_param = room.LookupParameter('Forro_REV_1')
 
     # Useful information about project's rooms:
     room_default_height_offset = int(3 * 3.28084)  # Value AsDouble that Equals to 2.74m
@@ -82,14 +82,14 @@ for selected_room_name in selected_room_names:
     room_area = float((room_area_str)[:5])
 
     # The following three room builtin paramaters were chosen to store only the numeric identifiers corresponding to the finishing materials collected (100-199 for floor finishes, 200-299 for wall finishes, 300-399 for ceiling finishes)
-    rooms_ceiling_finish_id = room.get_Parameter(DB.BuiltInParameter.ROOM_FINISH_CEILING)
+    rooms_ceiling_finish_id = room.LookupParameter('Forro_REV_1_COD')
 
-    rooms_wall_finish_id = room.get_Parameter(DB.BuiltInParameter.ROOM_FINISH_WALL)
-    rooms_wall_finish_id_2 = room.LookupParameter('ACAB PAREDE 2')
-    rooms_wall_finish_id_3 = room.LookupParameter('ACAB PAREDE 3')
+    rooms_wall_finish_id = room.LookupParameter('Parede_REV_1_COD')
+    rooms_wall_finish_id_2 = room.LookupParameter('Parede_REV_2_COD')
+    rooms_wall_finish_id_3 = room.LookupParameter('Parede_REV_3_COD')
 
-    rooms_floor_finish_id = room.get_Parameter(DB.BuiltInParameter.ROOM_FINISH_FLOOR)
-    rooms_floor_finish_id_2 = room.LookupParameter('ACAB PISO 2')
+    rooms_floor_finish_id = room.LookupParameter('Piso_REV_1_COD')
+    rooms_floor_finish_id_2 = room.LookupParameter('Piso_REV_2_COD')
 
     room_bbox = room.get_BoundingBox(doc.ActiveView)
     room_outline = DB.Outline(room_bbox.Min, room_bbox.Max)
@@ -116,7 +116,7 @@ for selected_room_name in selected_room_names:
                 room_upper_offset.Set(room_default_height_offset)
                 t.Commit()
         except IndexError:
-            break
+            pass
 
 
 
@@ -251,7 +251,7 @@ for selected_room_name in selected_room_names:
     except:
         if IndexError:
             pass
-        if AttributeError:
+        elif AttributeError:
             print('CONFERIR: Ainda há parâmetro(s) (de código ou de descrição de revestimentos) a adicionar ao projeto.')
     rooms_total+=1
 print('{} ambiente(s) analisado(s).'.format(rooms_total))
