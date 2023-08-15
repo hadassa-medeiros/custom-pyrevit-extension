@@ -68,7 +68,20 @@ for selected_room_number in selected_room_numbers:
     wall_finish3_param = room.LookupParameter('Parede_REV_3')
     floor_finish_param = room.LookupParameter('Piso_REV_1')
     floor_finish2_param = room.LookupParameter('Piso_REV_2')
+
     ceiling_finish_param = room.LookupParameter('Forro_REV_1')
+    rooms_ceiling_finish_id = room.LookupParameter('Forro_REV_1_COD')
+
+
+    # The following three room builtin paramaters were chosen to store only the numeric identifiers corresponding to the finishing materials collected (100-199 for floor finishes, 200-299 for wall finishes, 300-399 for ceiling finishes)
+
+    rooms_wall_finish_id = room.LookupParameter('Parede_REV_1_COD')
+    rooms_wall_finish_id_2 = room.LookupParameter('Parede_REV_2_COD')
+    rooms_wall_finish_id_3 = room.LookupParameter('Parede_REV_3_COD')
+
+    rooms_floor_finish_id = room.LookupParameter('Piso_REV_1_COD')
+    rooms_floor_finish_id_2 = room.LookupParameter('Piso_REV_2_COD')
+
 
     # Useful information about project's rooms:
     room_default_height_offset = int(3 * 3.28084)  # Value AsDouble that Equals to 2.74m
@@ -81,15 +94,6 @@ for selected_room_number in selected_room_numbers:
     room_area_str = room.LookupParameter('Área').AsValueString()
     room_area = float((room_area_str)[:5])
 
-    # The following three room builtin paramaters were chosen to store only the numeric identifiers corresponding to the finishing materials collected (100-199 for floor finishes, 200-299 for wall finishes, 300-399 for ceiling finishes)
-    rooms_ceiling_finish_id = room.LookupParameter('Forro_REV_1_COD')
-
-    rooms_wall_finish_id = room.LookupParameter('Parede_REV_1_COD')
-    rooms_wall_finish_id_2 = room.LookupParameter('Parede_REV_2_COD')
-    rooms_wall_finish_id_3 = room.LookupParameter('Parede_REV_3_COD')
-
-    rooms_floor_finish_id = room.LookupParameter('Piso_REV_1_COD')
-    rooms_floor_finish_id_2 = room.LookupParameter('Piso_REV_2_COD')
 
     room_bbox = room.get_BoundingBox(doc.ActiveView)
     room_outline = DB.Outline(room_bbox.Min, room_bbox.Max)
