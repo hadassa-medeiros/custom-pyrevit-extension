@@ -148,7 +148,6 @@ for selected_room_name in selected_room_names:
                     wall_mats[elem_type_description] = type_id_str
 
                 elif elem_category == floors_category and area_tolerance:
-                    print(elem_type_name, elem.Id)
                     try:
                         t = DB.Transaction(doc, "applying floor finish material to room's parameter")
                         t.Start()
@@ -185,7 +184,7 @@ for selected_room_name in selected_room_names:
         if len(wall_mats) == 0:
             print('NENHUM REVESTIMENTO DE PAREDE IDENTIFICADO')
 
-        if len(wall_mats) == 1:
+        elif len(wall_mats) == 1:
 
             wall_finish1 = wall_mats.items()[0][0]
             wall_id1 = wall_mats.items()[0][1]
@@ -249,7 +248,10 @@ for selected_room_name in selected_room_names:
         wall_mats = {}
         print('-------------------------------------------------------------------------------------------------------')
 
-    except IndexError:
-        pass
+    except:
+        if IndexError:
+            pass
+        if AttributeError:
+            print('CONFERIR: Ainda há parâmetro(s) (de código ou de descrição de revestimentos) a adicionar ao projeto.')
     rooms_total+=1
-print('{} ambientes foram analisados.'format(rooms_total))
+print('{} ambiente(s) analisado(s).'.format(rooms_total))
