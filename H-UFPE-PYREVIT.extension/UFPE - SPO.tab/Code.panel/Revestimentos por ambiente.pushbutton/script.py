@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
+import clr
+
+clr.AddReference('RevitAPI')
 import Autodesk.Revit.DB as DB
 import Autodesk.Revit.UI.Selection as sel
 from pyrevit import forms
 # from rpw import revit, db, ui, forms
-
-import clr
-clr.AddReference('RevitAPIUI')
-
 
 __title__     = "Revestimentos por ambiente"
 __author__    = "Hadassa Medeiros"
@@ -91,9 +90,8 @@ for selected_room_number in selected_room_numbers:
     room_id = room.Id.ToString()
     room_name = room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString()
     room_elem = doc.GetElement(DB.ElementId(int(room_id)))
-    room_area_str = room.LookupParameter('Área').AsValueString()
-    room_area = float((room_area_str)[:5])
-
+    room_area = float((room.get_Parameter(DB.BuiltInParameter.ROOM_AREA).AsValueString())[:4])
+    print(type(room_area))
 
     room_bbox = room.get_BoundingBox(doc.ActiveView)
     room_outline = DB.Outline(room_bbox.Min, room_bbox.Max)
@@ -103,24 +101,24 @@ for selected_room_number in selected_room_numbers:
     # list_python_collected_elements = ['room {}: {}'.format(room),list(collected_intersecting_elements)]
 
 
-    for level in levels:
-        try:
-            level_above = levels[levels.index(level) + 1]
-            level_above_elev = level_above.get_Parameter(DB.BuiltInParameter.LEVEL_ELEV).AsDouble()
-            floor_to_floor_height = level_above_elev - room_level_elev # This value is in the Revit's format AsDouble, not in meters.
-            if room.Level.Id == level.Id and floor_to_floor_height > 0:
-                t = DB.Transaction(doc, "Changing room's upper offset")
-                t.Start()
-                room_upper_offset.Set(floor_to_floor_height - .7)
-                t.Commit()
-                # print("Upper offset parameter value of the room {} has been successfully modified to {}m.".format(room_name, ((floor_to_floor_height - .7)/double_to_meter_divisor)))
-            elif floor_to_floor_height == 0:
-                t = DB.Transaction(doc, "Changing room's upper offset")
-                t.Start()
-                room_upper_offset.Set(room_default_height_offset)
-                t.Commit()
-        except IndexError:
-            pass
+    # for level in levels:
+    #     try:
+    #         level_above = levels[levels.index(level) + 1]
+    #         level_above_elev = level_above.get_Parameter(DB.BuiltInParameter.LEVEL_ELEV).AsDouble()
+    #         floor_to_floor_height = level_above_elev - room_level_elev # This value is in the Revit's format AsDouble, not in meters.
+    #         if room.Level.Id == level.Id and floor_to_floor_height > 0:
+    #             t = DB.Transaction(doc, "Changing room's upper offset")
+    #             t.Start()
+    #             room_upper_offset.Set(floor_to_floor_height - .7)
+    #             t.Commit()
+    #             # print("Upper offset parameter value of the room {} has been successfully modified to {}m.".format(room_name, ((floor_to_floor_height - .7)/double_to_meter_divisor)))
+    #         elif floor_to_floor_height == 0:
+    #             t = DB.Transaction(doc, "Changing room's upper offset")
+    #             t.Start()
+    #             room_upper_offset.Set(room_default_height_offset)
+    #             t.Commit()
+    #     except IndexError:
+    #         pass
 
 
 
@@ -142,15 +140,13 @@ for selected_room_number in selected_room_numbers:
 
                 elem_type = doc.GetElement(elem.GetTypeId())
                 elem_type_description = elem_type.get_Parameter(DB.BuiltInParameter.ALL_MODEL_DESCRIPTION).AsString()
-
+                print(elem_type_description)
                 type_id = elem_type.get_Parameter(DB.BuiltInParameter.WINDOW_TYPE_ID)
                 type_id_str = elem_type.get_Parameter(DB.BuiltInParameter.WINDOW_TYPE_ID).AsString()
                 # print('{}, in {}-{} - marca de tipo: {}'.format(elem_category, room.Number, room_name, type_id_str))
 
-
                 if elem_category == walls_category:
                     wall_mats[elem_type_description] = type_id_str
-
                 elif elem_category == floors_category and area_tolerance:
                     try:
                         t = DB.Transaction(doc, "applying floor finish material to room's parameter")
@@ -185,8 +181,6 @@ for selected_room_number in selected_room_numbers:
 
     try:
 
-
-
         print('PAREDE:')
         if len(wall_mats) == 0:
             print('NENHUM REVESTIMENTO DE PAREDE IDENTIFICADO')
@@ -199,7 +193,7 @@ for selected_room_number in selected_room_numbers:
             t = DB.Transaction(doc,
                                "applying additional wall finish materials and IDs to the respective room's parameter")
             t.Start()
-            print('Aplicado o código')
+            print('Aplicado o código referente a {}'.format(wall_finish1))
             wall_finish_param.Set(wall_finish1)
             wall_finish2_param.Set('')
             wall_finish3_param.Set('')
@@ -211,47 +205,47 @@ for selected_room_number in selected_room_numbers:
             print('{} ({})'.format(wall_id1, wall_finish1))
             t.Commit()
 
-        elif len(wall_mats) == 2:
-
-            wall_finish1 = wall_mats.items()[0][0]
-            wall_finish2 = wall_mats.items()[1][0]
-
-            wall_id1 = wall_mats.items()[0][1]
-            wall_id2 = wall_mats.items()[1][1]
-            t = DB.Transaction(doc,
-                               "applying additional wall finish materials and IDs to the respective room's parameter")
-
-            t.Start()
-            wall_finish_param.Set(wall_finish1)
-            wall_finish2_param.Set(wall_finish2)
-            wall_finish3_param.Set('')
-            rooms_wall_finish_id.Set(wall_id1)
-            rooms_wall_finish_id_2.Set(wall_id2)
-            rooms_wall_finish_id_3.Set('')
-            print('Aplicados os códigos {} ({}), {} ({})'.format(wall_id1, wall_finish1, wall_id2, wall_finish2))
-            t.Commit()
-
-        elif len(wall_mats) == 3:
-
-            wall_finish1 = wall_mats.items()[0][0]
-            wall_finish2 = wall_mats.items()[1][0]
-            wall_finish3 = wall_mats.items()[2][0]
-
-            wall_id1 = wall_mats.items()[0][1]
-            wall_id2 = wall_mats.items()[1][1]
-            wall_id3 = wall_mats.items()[2][1]
-
-            t = DB.Transaction(doc,
-                               "applying additional wall finish materials and IDs to the respective room's parameter")
-            t.Start()
-            wall_finish_param.Set(wall_finish1)
-            wall_finish2_param.Set(wall_finish2)
-            wall_finish3_param.Set(wall_finish3)
-            rooms_wall_finish_id.Set(wall_id1)
-            rooms_wall_finish_id_2.Set(wall_id2)
-            rooms_wall_finish_id_3.Set(wall_id3)
-            print('{} ({}), {} ({}), {} ({})'.format(wall_id1, wall_finish1, wall_id2, wall_finish2, wall_id3, wall_finish3))
-            t.Commit()
+        # elif len(wall_mats) == 2:
+        #
+        #     wall_finish1 = wall_mats.items()[0][0]
+        #     wall_finish2 = wall_mats.items()[1][0]
+        #
+        #     wall_id1 = wall_mats.items()[0][1]
+        #     wall_id2 = wall_mats.items()[1][1]
+        #     t = DB.Transaction(doc,
+        #                        "applying additional wall finish materials and IDs to the respective room's parameter")
+        #
+        #     t.Start()
+        #     wall_finish_param.Set(wall_finish1)
+        #     wall_finish2_param.Set(wall_finish2)
+        #     wall_finish3_param.Set('')
+        #     rooms_wall_finish_id.Set(wall_id1)
+        #     rooms_wall_finish_id_2.Set(wall_id2)
+        #     rooms_wall_finish_id_3.Set('')
+        #     print('Aplicados os códigos {} ({}), {} ({})'.format(wall_id1, wall_finish1, wall_id2, wall_finish2))
+        #     t.Commit()
+        #
+        # elif len(wall_mats) == 3:
+        #
+        #     wall_finish1 = wall_mats.items()[0][0]
+        #     wall_finish2 = wall_mats.items()[1][0]
+        #     wall_finish3 = wall_mats.items()[2][0]
+        #
+        #     wall_id1 = wall_mats.items()[0][1]
+        #     wall_id2 = wall_mats.items()[1][1]
+        #     wall_id3 = wall_mats.items()[2][1]
+        #
+        #     t = DB.Transaction(doc,
+        #                        "applying additional wall finish materials and IDs to the respective room's parameter")
+        #     t.Start()
+        #     wall_finish_param.Set(wall_finish1)
+        #     wall_finish2_param.Set(wall_finish2)
+        #     wall_finish3_param.Set(wall_finish3)
+        #     rooms_wall_finish_id.Set(wall_id1)
+        #     rooms_wall_finish_id_2.Set(wall_id2)
+        #     rooms_wall_finish_id_3.Set(wall_id3)
+        #     print('{} ({}), {} ({}), {} ({})'.format(wall_id1, wall_finish1, wall_id2, wall_finish2, wall_id3, wall_finish3))
+        #     t.Commit()
 
         wall_mats = {}
         print('-------------------------------------------------------------------------------------------------------')
