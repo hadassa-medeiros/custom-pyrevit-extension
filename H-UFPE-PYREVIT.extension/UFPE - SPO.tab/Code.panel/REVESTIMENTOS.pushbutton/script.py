@@ -5,19 +5,16 @@ doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 
-levels_collector =    DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Levels)
-materials_collector = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Materials)
-floors_collector =     DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Floors)
-ceilings_collector =    DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Ceilings)
-walls_collector =   DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Walls)
-rooms_collector = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Rooms)
 
-levels = list(levels_collector.WhereElementIsNotElementType().ToElements())
-materials = materials_collector.ToElements()
-rooms = rooms_collector.WhereElementIsNotElementType().ToElements()
-floors = floors_collector.ToElements()
-ceilings = ceilings_collector.ToElements()
-walls = walls_collector.ToElements()
+levels = list(
+    DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Levels).
+    WhereElementIsNotElementType().ToElements())
+materials = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Materials).ToElements()
+rooms = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Rooms).WhereElementIsNotElementType().ToElements()
+floors = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Floors).ToElements()
+ceilings = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Ceilings).ToElements()
+
+walls_collector =  DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Walls)
 walls_instances = walls_collector.WhereElementIsNotElementType().ToElements()
 
 ceilings_category = str(DB.BuiltInCategory.OST_Ceilings)
@@ -32,7 +29,6 @@ wall_materials_in_room = []
 double_to_meter_divisor = 3.28084
 
 # ITERATING THROUGH EVERY LEVEL FROM LOWEST TO HIGHEST:
-
 for room in rooms:
     try:
         # Shared parameters created to store room's finish material Revit objects
