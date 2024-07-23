@@ -32,7 +32,7 @@ combined_filter = LogicalOrFilter(category_filters)
 doc = __revit__.ActiveUIDocument.Document
 collector = FilteredElementCollector(doc).WherePasses(combined_filter)
 
-# # Mostrar TODOS os elementos das categorias de interesse
+# #Mostrar todos os elementos das categorias de interesse
 # for elem in collector:
 #     if elem is not None:
 #         elem_type = doc.GetElement(elem.GetTypeId())
@@ -104,11 +104,12 @@ for selected_room_number in selected_room_numbers:
 
     # The following three room builtin paramaters were chosen to store only the numeric identifiers corresponding to the finishing materials collected (100-199 for floor finishes, 200-299 for wall finishes, 300-399 for ceiling finishes)
 
-    rooms_wall_finish_id = room.LookupParameter('ACAB PAREDE 2')
+    rooms_wall_finish_id = room.LookupParameter('Parede_REV_1_COD')
+    # print(rooms_wall_finish_id.Definition.Name)
     rooms_wall_finish_id_2 = room.LookupParameter('Parede_REV_2_COD')
     rooms_wall_finish_id_3 = room.LookupParameter('Parede_REV_3_COD')
 
-    rooms_floor_finish_id = room.LookupParameter('ACAB PAREDE 2')
+    rooms_floor_finish_id = room.LookupParameter('Piso_REV_1_COD')
     rooms_floor_finish_id_2 = room.LookupParameter('Piso_REV_2_COD')
 
 
@@ -120,8 +121,14 @@ for selected_room_number in selected_room_numbers:
     room_id = room.Id.ToString()
     room_name = room.get_Parameter(BuiltInParameter.ROOM_NAME).AsString()
     room_elem = doc.GetElement(ElementId(int(room_id)))
-    room_area = float((room.get_Parameter(BuiltInParameter.ROOM_AREA).AsValueString())[:4])
+    # room_area = float((room.get_Parameter(BuiltInParameter.ROOM_AREA)
     #print(type(room_area))
+    room_area_param = room.get_Parameter(BuiltInParameter.ROOM_AREA)
+# Verifique se o parâmetro não é None antes de tentar acessar seu valor
+    if room_area_param is not None:
+        room_area = float((room_area_param.AsValueString())[:4])
+    else:
+        room_area = 0.0  # Ou algum valor padrão que faça sentido
 
     room_bbox = room.get_BoundingBox(doc.ActiveView)
     room_outline = Outline(room_bbox.Min, room_bbox.Max)
@@ -137,38 +144,62 @@ for selected_room_number in selected_room_numbers:
 
             elem_type_name = elem_type.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()
             elem_type_mark = elem_type.get_Parameter(BuiltInParameter.WINDOW_TYPE_ID).AsString()
-
-           # elem_area = float((elem.LookupParameter('Área').AsValueString())[:5])
-            #area_tolerance = (room_area * .98 < elem_area < room_area * 1.02)
-
-            # DEFINICOES:
-            if 'REV' in elem_type_name and elem in collector:
-                # print('{}, {}, cód. ID {}'.format(elem.Name, elem.Category.Name, elem.Id))
-
+            elem_area = float((elem.LookupParameter('Área').AsValueString())[:5])
+            area_tolerance = (room_area * .98 < elem_area < room_area * 1.02)
+           
+            if 'REV' in elem_type_name:
+                print('{}, {}, cód. ID {}'.format(elem.Name, elem.Category.Name, elem.Id))
                 elem_structure = HostObjAttributes.GetCompoundStructure(elem_type)
                 layers = elem_structure.GetLayers()
-
                 elem_type = doc.GetElement(elem.GetTypeId())
                 elem_type_description = elem_type.get_Parameter(BuiltInParameter.ALL_MODEL_DESCRIPTION).AsString()
                 # print('descricao marca e nome', elem_type_description, elem_type_mark, elem_type_name)
                 print('{}, in {}-{} - marca de tipo: {}'.format(elem_category, room.Number, room_name, elem_type_mark))
 
-                if elem_category == walls_category:
-                    wall_mats[elem_type_description] = type_id_str
-                # elif elem_category == floors_category and area_tolerance:
-                #     try:
-                #         t = Transaction(doc, "applying floor finish material to room's parameter")
-                #         t.Start()
-                #         print('PISO:')
-                #         floor_finish_param.Set(elem_type_description)
-                #         rooms_floor_finish_id.Set(type_id_str)
-                #         print('{} - {}'
-                #               .format(type_id_str, elem_type_description))
-                #     except TypeError:
-                #         print('Conferir se especificação e código do elemento de piso {} estão associadas aos campos '
-                #               'Descrição e Marca de tipo, respectivamente'
-                #                   .format(elem_type_name))
+
+                # #funcionou.
+                # if elem_type_mark == '06':
+                #     t = Transaction(doc, "applying floor finish material to room's parameter")
+                #     t.Start()
+                #     print('walls:')
+                #     # floor_finish_param.Set(elem_type_description)
+                #     rooms_wall_finish_id.Set(elem_type_mark)
                 #     t.Commit()
+
+                
+               
+                 
+                if elem_category == walls_category:
+                    wall_mats[elem_type_name] = elem_type_mark
+                    print(wall_mats)
+                    # try:
+                    #     t = Transaction(doc, "applying floor finish material to room's parameter")
+                    #     t.Start()
+                    #     print('walls:')
+                    #     # floor_finish_param.Set(elem_type_description)
+                    #     rooms_wall_finish_id.Set(elem_type_mark)
+                    # except:
+                    # # except TypeError:
+                    #     print('Conferir se especificação e código do elemento de piso {} estão associadas aos campos '
+                    #           'Descrição e Marca de tipo, respectivamente'
+                    #               .format(elem_type_name))
+                    # t.Commit()
+
+                elif elem_category == floors_category:
+                    try:
+                        t = Transaction(doc, "applying floor finish material to room's parameter")
+                        t.Start()
+                        print('PISO:')
+                        floor_finish_param.Set(elem_type_description)
+                        rooms_floor_finish_id.Set(elem_type_mark)
+                        print('{} - {}'
+                              .format(elem_type_name, elem_type_description))
+                    except:
+                    # except TypeError:
+                        print('Conferir se especificação e código do elemento de piso {} estão associadas aos campos '
+                              'Descrição e Marca de tipo, respectivamente'
+                                  .format(elem_type_name))
+                    t.Commit()
 
 
         except AttributeError:
@@ -180,7 +211,7 @@ for selected_room_number in selected_room_numbers:
         if len(wall_mats) == 0:
             print('NENHUM REVESTIMENTO DE PAREDE IDENTIFICADO')
 
-        elif len(wall_mats) == 1:
+        if len(wall_mats) == 1:
 
             wall_finish1 = wall_mats.items()[0][0]
             wall_id1 = wall_mats.items()[0][1]
@@ -202,6 +233,29 @@ for selected_room_number in selected_room_numbers:
 
         wall_mats = {}
         print('-------------------------------------------------------------------------------------------------------')
+# # pra quantos quer que sejam encontrados. se mais de 3 porem, avisar as so armazenar ate 3 revestimentos de cada categoria
+        # if len(wall_mats) == 2:
+
+        #     wall_finish1 = wall_mats.items()[0][0]
+        #     wall_id1 = wall_mats.items()[0][1]
+
+        #     t = Transaction(doc,
+        #                        "applying additional wall finish materials and IDs to the respective room's parameter")
+        #     t.Start()
+        #     print('Aplicado o código referente a {}'.format(wall_finish1))
+        #     wall_finish_param.Set(wall_finish1)
+        #     wall_finish2_param.Set('')
+        #     wall_finish3_param.Set('')
+
+        #     rooms_wall_finish_id.Set(wall_id1)
+        #     rooms_wall_finish_id_2.Set('')
+        #     rooms_wall_finish_id_3.Set('')
+
+        #     print('{} ({})'.format(wall_id1, wall_finish1))
+        #     t.Commit()
+
+        # wall_mats = {}
+        # print('-------------------------------------------------------------------------------------------------------')
 
     except:
         if IndexError:
