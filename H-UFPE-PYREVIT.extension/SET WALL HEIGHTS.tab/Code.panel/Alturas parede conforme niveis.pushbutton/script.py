@@ -7,7 +7,7 @@ import Autodesk.Revit.UI.Selection as sel
 from pyrevit import forms
 # from rpw import revit, db, ui, forms
 
-__title__     = "Set rooms' upper offset according to height of the level above"
+__title__     = "rooms' upper offset"
 __author__    = "Hadassa Medeiros"
 doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
