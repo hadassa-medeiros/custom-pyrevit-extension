@@ -107,3 +107,39 @@ if __name__ == "__main__":
     print("Níveis: {}".format(interface.levels))
     # print("Tipos de parede: {interface.walltypes}")
     # print("Linhas: {interface.lines}")
+
+# # this may have some utility:
+# rooms = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Rooms)
+
+# for r in rooms:
+# 	area_amb = round(((r.Area*0.3048)/3.2808),2)
+# 	nome = Element.Name.GetValue(r)
+# 	print('{}-{}m'.format(nome, area_amb))
+# 	nome_iniciais = nome[0:4]
+# 	if nome_iniciais == 'SALA':
+# 		print(nome + 'm²' + 'É SALA DE AULA')
+
+# print(rooms)
+
+# # Area from room tags:
+# # Get the selected room
+# selection = __revit__.ActiveUIDocument.Selection
+
+# room = doc.GetElement(element_id)
+
+# area_tags = list(room.GetDependentElements(Filters.AreaTagFilter(), False))
+# if area_tags:
+# 	area_value = area_tag.Area
+# print("Room Area (from AreaTag):", area_value)
+
+# # total wall areas:
+# wall_collector = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Walls).WhereElementIsNotElementType()
+
+# total_area = 0.0
+# print(wall_collector)
+
+# for wall in wall_collector:
+#     area_param = wall.Parameter[BuiltInParameter.HOST_AREA_COMPUTED]
+#     if area_param:
+#         total_area = total_area + area_param.AsDouble()
+# print("Total area of walls is {:.2f}".format(total_area))

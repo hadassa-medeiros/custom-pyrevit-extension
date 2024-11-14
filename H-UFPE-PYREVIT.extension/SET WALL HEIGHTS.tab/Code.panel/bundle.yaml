@@ -1,4 +1,4 @@
 layout:
-    - Alturas parede conforme niveis
-    - Wall curtain room limits
-    - Detect CAD lines
+    - Wall heights from upper levels
+    - Room separators from curtain walls
+    - CAD lines to walls
