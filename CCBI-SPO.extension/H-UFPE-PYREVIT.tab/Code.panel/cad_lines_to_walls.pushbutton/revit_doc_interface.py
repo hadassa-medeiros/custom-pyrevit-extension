@@ -26,6 +26,12 @@ class RevitDocInterface:
         return DB.FilteredElementCollector(self.doc).OfClass(
             self.category_map["walltypes"]
         ).ToElements()
+    
+    @property
+    def walls(self):
+        return DB.FilteredElementCollector(self.doc).OfClass(
+            self.category_map["walls"]
+        ).ToElements()
 
     @property
     def lines(self):
@@ -70,6 +76,10 @@ def get_name(element):
 def get_names(RevitListOfElements):
     elem_names_list = [get_name(element) for element in RevitListOfElements]
     return elem_names_list
+
+def get_element(RevitListOfElements):
+    elements_list = [element for element in RevitListOfElements]
+    return elements_list[0]
 
 class ModelLine:
     # def __init__(self, RevitOBJ: ModelLines):

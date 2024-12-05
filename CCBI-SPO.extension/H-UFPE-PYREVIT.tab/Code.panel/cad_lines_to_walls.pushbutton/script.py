@@ -19,7 +19,7 @@ vertical_lines = []
 # get_wall_layer_lines(interface.model_lines, cad_wall_layer_names)
             # line = ModelLine(line)
 cad_wall_layer_lines= interface.filter_lines_by_name(["Parede"])
-for line in cad_wall_layer_lines:
+# for line in cad_wall_layer_lines:
     
     
     #wall_faces = [lineA, lineB]
