@@ -14,7 +14,7 @@ class RevitDocInterface:
         }
     # def filter_elements_by_name(elements_list, reference_keywords):
     #     for element in elements_list:
-            
+    
     @property
     def levels(self):
         return DB.FilteredElementCollector(self.doc).OfCategory(
@@ -48,7 +48,7 @@ class RevitDocInterface:
     @property
     def model_lines(self):
         filter = DB.CurveElementFilter(DB.CurveElementType.ModelCurve)
-        return DB.FilteredElementCollector(self.doc).WherePasses(filter).ToElements()
+        return DB.FilteredElementCollector(self.doc).WherePasses(filter).WhereElementIsNotElementType().ToElements()
         
     # def filter_elements_by_name(self, elements_list, reference_keywords):
     #     filter = [DB.FilterStringContains(DB.BuiltInParameter.ALL_MODEL_TYPE_NAME, keyword) for keyword in reference_keywords]
@@ -65,6 +65,11 @@ class RevitDocInterface:
             ]
         return filtered_lines
     
+def find_id_by_element_name(RevitListOfElements, keyword):
+    for element in RevitListOfElements:
+        if get_name(element) == keyword:
+            return element.Id
+
 def get_ids_of(RevitListOfElements):
     elem_ids_list = [element.Id for element in RevitListOfElements]
     return elem_ids_list
@@ -81,36 +86,44 @@ def get_element(RevitListOfElements):
     elements_list = [element for element in RevitListOfElements]
     return elements_list[0]
 
+def meter_to_double(value_in_meters):
+    meter_to_double_factor = 3.280840
+    value_in_double = round(value_in_meters * meter_to_double_factor, 5)
+    return value_in_double
+
+
 class ModelLine:
     # def __init__(self, RevitOBJ: ModelLines):
     def __init__(self, RevitOBJ):
         self.start_point = RevitOBJ.GeometryCurve.GetEndPoint(0)
         self.end_point = RevitOBJ.GeometryCurve.GetEndPoint(1)
         self.style = RevitOBJ.LineStyle.Name
+        self.length = RevitOBJ.GeometryCurve.Length
+        self.sketch_plane = RevitOBJ.SketchPlane.Name
        
     @property
     def start_x(self):
-        return self.start_point.X
+        return round(self.start_point.X, 5)
     
     @property
     def start_y(self):
-        return self.start_point.Y
+        return round(self.start_point.Y, 5)
     
     @property
     def start_z(self):
-        return self.start_point.Z
+        return round(self.start_point.Z, 5)
 
     @property
     def end_x(self):
-        return self.end_point.X
+        return round(self.end_point.X, 5)
 
     @property
     def end_y(self):
-        return self.end_point.Y
+        return round(self.end_point.Y, 5)
     
     @property
     def end_z(self):
-        return self.end_point.Z
+        return round(self.end_point.Z, 5)
     
 if __name__ == "__main__":
     interface = RevitDocInterface()

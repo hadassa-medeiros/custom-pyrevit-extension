@@ -1,173 +1,185 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
-from revit_doc_interface import (RevitDocInterface, ModelLine, get_ids_of, get_name, get_names)
+from revit_doc_interface import (RevitDocInterface, ModelLine, find_id_by_element_name, get_name, get_names, meter_to_double)
 
 doc = __revit__.ActiveUIDocument.Document
 collect = DB.FilteredElementCollector(doc)
 
 interface = RevitDocInterface()
 
-get_names(interface.walltypes)
-# agrupar linhas verticais e horizontais
-default_wall_thickness = 0.492126 # equivalent to 150mm. To be refactored to include more wall thickness values
-default_wall_type_name = "GENERICA_15CM"
+# find groups of lines that represent the faces of a same wall and store them
+default_wall_thickness = meter_to_double(0.15)
+# print(default_wall_thickness)
+default_walltype_id = find_id_by_element_name(interface.walltypes, "GENERICA_15CM")
 
-horizontal_lines = []
-vertical_lines = []
+cad_wall_lines = interface.filter_lines_by_name(["Parede"])
+tolerance = 1e-5
+
+def is_horizontal(model_line):
+    return abs(model_line.end_y - model_line.start_y) == 0
+
+def is_vertical(model_line):
+    return abs(model_line.end_x - model_line.start_x) == 0
+
+def dist_between_lines(line_A, line_B):
+    if is_horizontal(line_B) and is_horizontal(line_A):
+        offset = (abs(line_B.start_y - line_A.start_y))
+    elif is_vertical(line_B) and is_vertical(line_A):
+        offset = (abs(line_B.start_x - line_A.start_x))
+    else:
+        return None
+    return offset
+
+def share_point_in_perpendicular_axis(line_A, line_B):
+    # for two given lines, checks if they share a common point in the opposite axis
+    # to that in which they're located as straight horizontal (x) ou vertical (y) lines.
+    # This means they probably represent two faces of a same wall, if wall_thickness 
+    # condition is also true.
+    if is_horizontal(line_B) and is_horizontal(line_A):
+        if (
+            line_B.start_x < line_A.start_x < line_B.end_x
+        ) or (
+            line_A.start_x < line_B.start_x < line_A.end_x
+        ) or (
+            line_B.end_x < line_A.end_x < line_B.start_x
+        ) or (
+            line_A.end_x < line_B.end_x < line_A.start_x
+        ):
+            return True
+    elif is_vertical(line_B) and is_vertical(line_A):
+        if (
+            line_B.start_y > line_A.start_y > line_B.end_y
+        ) or (
+            line_A.start_y > line_B.start_y > line_A.end_y
+        ) or (
+            line_B.end_y > line_A.end_y > line_B.start_y
+        ) or (
+            line_A.end_y > line_B.end_y > line_A.start_y
+        ):
+            return True
+    return False
+    # *switch to using cases?
+
+grouped_lines = []
+i = 0
+
+for i in range(len(cad_wall_lines)-1):
+    n = i+1
+    ref_line = ModelLine(cad_wall_lines[i])
+        # compare list[i] com list[i+1]
+    lines_of_same_wall = [ref_line]
+    while n < len(cad_wall_lines):
+        next_line = ModelLine(cad_wall_lines[n])
+        # print('comparing now {} to {}:'.format(str(cad_wall_lines[i].Id), str(cad_wall_lines[n].Id)))
+        offset = dist_between_lines(ref_line, next_line)
+        if share_point_in_perpendicular_axis(ref_line, next_line) and ((offset - default_wall_thickness) < tolerance):
+    # guarde-os juntos na lista se match criteria
+            lines_of_same_wall.append(next_line)
+            # remova da lista os que forem dando match
+        # print(len(lines_of_same_wall))
+        n+=1
+    # recomece do proximo da lista
+    if len(lines_of_same_wall) > 1:
+        grouped_lines.append(lines_of_same_wall)
+    i+=1
+    # mantenha a posicao do 1o em i e va incrementando a n e comparando-a com i ate acabar os itens
+
+def create_wall(doc, bound_line, default_wall_type_id, level_id, misterious_param_1 = 10, misterious_param_2 = 0 , flag_1 = False, flag_2 = False):
+    t = DB.Transaction(doc, "Create new wall instance from cad line")
+    t.Start()
+    try:
+        DB.Wall.Create(doc, bound_line, default_wall_type_id, level_id, 10, 0, False, False)
+        # print("Wall created at {} and {}.".format(start_point, end_point))
+    except Exception as e:
+        print("Error creating wall instance: {}".format(e))
+        pass
+    t.Commit()
+
+# print(grouped_lines)
+
+def longest_in(line_list):
+    if line_list[0].length >= lines[1].length:
+        longest = line_list[0]
+    else:
+        longest = line_list[1]
+    return longest
+
+def shortest_in(line_list):
+    if line_list[0].length < lines[1].length:
+        shortest = line_list[0]
+    else:
+        shortest = line_list[1]
+    return shortest
+
+for lines in grouped_lines:
+    ref_line = longest_in(lines)
+    aux_line = shortest_in(lines)
+    # ref_line = shortest_in(lines)
+    # aux_line = longest_in(lines)
+    # print(ref_line.length, aux_line.length)
+    # # determine line positioning condition relative to the other(s) in the same group
+    print(ref_line.start_x, aux_line.start_x)
+    is_right = is_vertical(ref_line) and ref_line.start_x > aux_line.start_x
+    is_left = is_vertical(ref_line) and ref_line.start_x < aux_line.start_x
+    # print(is_right, is_vertical(ref_line), 'must be opposite of', is_left)
+    is_above = is_horizontal(ref_line) and ref_line.start_y > aux_line.start_y
+    is_below = is_horizontal(ref_line) and ref_line.start_y < aux_line.start_y
+
+    if is_right:
+        # a = ref_line.start_point - DB.XYZ(default_wall_thickness/2, .2, 0)
+        # b = ref_line.end_point - DB.XYZ(default_wall_thickness/2, -.2, 0)
+        a = ref_line.start_point - DB.XYZ(default_wall_thickness/2, 0, 0)
+        b = ref_line.end_point - DB.XYZ(default_wall_thickness/2, 0, 0)
+    elif is_left:
+        # a = ref_line.start_point + DB.XYZ(default_wall_thickness/2, .2, 0)
+        # b = ref_line.end_point + DB.XYZ(default_wall_thickness/2, -.2, 0)
+        a = ref_line.start_point + DB.XYZ(default_wall_thickness/2, 0, 0)
+        b = ref_line.end_point + DB.XYZ(default_wall_thickness/2, 0, 0)
+    elif is_above:
+        # a = ref_line.start_point - DB.XYZ(-.2, default_wall_thickness/2, 0)
+        # b = ref_line.end_point - DB.XYZ(.2, default_wall_thickness/2, 0)
+        a = ref_line.start_point - DB.XYZ(0, default_wall_thickness/2, 0)
+        b = ref_line.end_point - DB.XYZ(0, default_wall_thickness/2, 0)
+    elif is_below:
+        # a = ref_line.start_point + DB.XYZ(-.2, default_wall_thickness/2, 0)
+        # b = ref_line.end_point + DB.XYZ(.2, default_wall_thickness/2, 0)
+        a = ref_line.start_point + DB.XYZ(0, default_wall_thickness/2, 0)
+        b = ref_line.end_point + DB.XYZ(0, default_wall_thickness/2, 0)
+    else:
+        None
+    bound_line = DB.Line.CreateBound(a, b)
+    create_wall(doc, bound_line, default_walltype_id, interface.levels[0].Id, 10, 0 , False, False)
+
+
 
         
-# get_wall_layer_lines(interface.model_lines, cad_wall_layer_names)
-            # line = ModelLine(line)
-cad_wall_layer_lines= interface.filter_lines_by_name(["Parede"])
-# for line in cad_wall_layer_lines:
+
+# # hadn't worked
+# while i < len(cad_wall_lines):
+#     n = i+1
+#     while n < len(cad_wall_lines):
+#         # compare the first line on the list with every other line
+#         ref_line = ModelLine(cad_wall_lines[i])
+#         next_line = ModelLine(cad_wall_lines[n])
+#         print('comparing now {} to {}:'.format(str(cad_wall_lines[i].Id), str(cad_wall_lines[n].Id)))
+#         lines_of_same_wall = [cad_wall_lines[i]]
+#         # if it matches the criteria (its possible and frequent that more than one matches the criteria)
+#         if share_point_in_perpendicular_axis(ref_line, next_line):
+#             lines_of_same_wall.append(str(cad_wall_lines[n].Id))
+#             grouped_lines.append(cad_wall_lines)
+#         n+=1
+#     i+=1
+
+    # cad_wall_lines.pop(i)
     
-    
-    #wall_faces = [lineA, lineB]
-    # detectar pares e me devolver apenas linha q interessa(ou seja: 1 que representa uma mesma parede q a linha irmã e length> twin_line)
-    
-    
+    # testing loop:
 
+    # if they match the criteria
+    #     group them together and 
+    #     remove them fromm the general list
+    #     start over
 
-
-
-
-# for wall_type in wall_types_collector:
-#     for param in wall_type.Parameters:
-#         # if p.Definition.Name == "Nome do tipo":
-#         if param.Definition.BuiltInParameter == DB.BuiltInParameter.ALL_MODEL_TYPE_NAME:
-#             if param.AsString() == "ALV_9CM": #to be reviewed(use the least specific nomenclature possible)
-#                 default_wall_type = wall_type        
-        
-        
-        
-# def create_wall(doc, bound_line, default_wall_type_id, level_id, misterious_1 = 10, misterious_2 = 0 , flag_1 = False, flag_2 = False):
-#     # def create_wall(doc, bound_line, default_wall_type.Id, level.Id, 10, 0 , False, False):
-#     t = DB.Transaction(doc, "Create new wall instance from cad lines")
-#     t.Start()
-#     try:
-#         DB.Wall.Create(doc, bound_line, default_wall_type_id, level_id, 10, 0, False, False)
-#         # print("Wall created at {} and {}.".format(start_point, end_point))
-#     except Exception as e:
-#         print("Erro ao criar a parede: {}".format(e))
-#         pass
-#     t.Commit()
-
-# # def lines_intersect(line_)
-# def lines_represent_same_wall(line_list, main_axis, aux_axis):
-#     while len(line_list) > 1:
-#         line_1 = line_list[0]
-#         start_1 = startpoint(line_1, main_axis)
-#         end_1 = endpoint(line_1, main_axis)
-        
-#         intersecting_lines = [line_1]
-#         wall_delimiting_faces = [line_1.Id.ToString()]
-        
-#         for i in range(1, len(line_list)):
-#             line_2 = line_list[i]
-#             start_2 = startpoint(line_2, main_axis)
-#             end_2 = endpoint(line_2, main_axis)
-            
-#             if main_axis == 'y':
-#                 if (
-#                     (start_1 >= start_2 >= end_1) or 
-#                     (start_1 >= end_2 >= end_1) or 
-#                     (start_2 >= start_1 >= end_2) or 
-#                     (start_2 >= end_1 >= end_2) or 
-#                     ((start_1 == start_2 and end_1 == end_2) or (start_1 == end_2 and end_1 == start_2))
-#                 ):
-#                     print("lines {} {} intersect in at least one point.".format(line_1.Id, line_2.Id))
-#                     intersecting_lines.append(line_2)
-                    
-#                     startpoint_wall_face_A = startpoint(line_1, aux_axis)
-#                     startpoint_wall_face_B = startpoint(line_2, aux_axis)
-#                     endpoint_wall_face_A = endpoint(line_1, aux_axis)
-#                     endpoint_wall_face_B = endpoint(line_2, aux_axis)
-                    
-#                     dist_between_faces_startpoints = round(abs(startpoint_wall_face_B - startpoint_wall_face_A), 6)
-#                     dist_between_faces_endpoints = round(abs(endpoint_wall_face_B - endpoint_wall_face_A), 6)
-
-#                     if dist_between_faces_startpoints and dist_between_faces_endpoints == default_wall_thickness:
-#                         wall_delimiting_faces.append(line_2)
-#                         for face in wall_delimiting_faces:
-#                             print(face.GeometryCurve.length())
-                        
-#             if main_axis == 'x':
-#                 if (
-#                     (start_1 <= start_2 <= end_1) or 
-#                     (start_1 <= end_2 <= end_1) or 
-#                     (start_2 <= start_1 <= end_2) or 
-#                     (start_2 <= end_1 <= end_2) or 
-#                     ((start_1 == start_2 and end_1 == end_2) or (start_1 == end_2 and end_1 == start_2))
-#                 ):
-#                     print("lines {} {} intersect in at least one point.".format(line_1.Id, line_2.Id))
-#                     intersecting_lines.append(line_2)
-                    
-#                     startpoint_wall_face_A = startpoint(line_1, aux_axis)
-#                     startpoint_wall_face_B = startpoint(line_2, aux_axis)
-#                     endpoint_wall_face_A = endpoint(line_1, aux_axis)
-#                     endpoint_wall_face_B = endpoint(line_2, aux_axis)
-                    
-#                     dist_between_faces_startpoints = round(abs(startpoint_wall_face_B - startpoint_wall_face_A), 6)
-#                     dist_between_faces_endpoints = round(abs(endpoint_wall_face_B - endpoint_wall_face_A), 6)
-
-#                     if dist_between_faces_startpoints and dist_between_faces_endpoints == default_wall_thickness:
-#                         print(dist_between_faces_startpoints, dist_between_faces_endpoints,'bla')
-#                         wall_delimiting_faces.append(line_2)
-#                         # print(wall_delimiting_faces)
-#                         a = line_1.GeometryCurve.GetEndPoint(0) - DB.XYZ(0, default_wall_thickness/2, 0)
-#                         b = line_1.GeometryCurve.GetEndPoint(1) - DB.XYZ(0, default_wall_thickness/2, 0)
-#                         bound_line = DB.Line.CreateBound(a, b)
-#                         # como prever casos em que uma mesma parede é conformada por várias linhas curtas/interruptas e recolher apenas uma das linhas (a maior), para inserir a parede com base nela apenas?
-#                         create_wall(doc, bound_line, default_wall_type.Id, level.Id, 10, 0 , False, False)
-#         line_list.pop(0)
-
-# tolerance = 1e-6 
-
-# for line in model_lines_collection:
-#     if any(name in line.LineStyle.Name for name in cad_wall_layer_names):
-#         x_startpoint = line.GeometryCurve.GetEndPoint(0).X
-#         x_endpoint = line.GeometryCurve.GetEndPoint(1).X
-#         y_startpoint = line.GeometryCurve.GetEndPoint(0).Y
-#         y_endpoint = line.GeometryCurve.GetEndPoint(1).Y
-
-#         # if line.GeometryCurve.Length == abs(x_endpoint - x_startpoint):
-#         #     print("linha reta")
-#         # print(abs(x_endpoint - x_startpoint))
-#         # print(line.GeometryCurve.Length)
-
-#         if abs(x_endpoint - x_startpoint) < tolerance:
-#             vertical_lines.append(line)
-        
-#         if abs(y_endpoint - y_startpoint) < tolerance:
-#             horizontal_lines.append(line)
-
-# # for linha in linhas horizontais
-# #     encontrar as que rDepresentam uma mesma parede e fazer um par
-# grouped_lines = [horizontal_lines, vertical_lines]
-
-# lines_represent_same_wall(vertical_lines, 'y', 'x')
-# lines_represent_same_wall(horizontal_lines, 'x', 'y')
-
-# # for linha in linhas verticais
-# #     encontrar as que representam uma mesma parede e fazer um par
-# # for par in pares
-# #     encontrar linha maior e mostrar se ela esta acima ou abaixo da menor
-# #     if linha maior is acima
-# #         adicionar parede abaixo
-# #     else
-# #         adicionar parede acima
-
-
-#     # wma = []
-#     # for i in range(len(prices) - len(weights) + 1):
-#     #     weighted_sum = sum(prices[i + j] * normalized_weights[j] for j in range(len(weights)))
-#     #     wma.append(weighted_sum)
-    
-    
-# # def lines_represent_same_wall(line_list):
-# # # print(len(line_list))
-# #     i = 0
-# #     while i < (len(line_list) - 1):
-# #     # print(line_list[i].GeometryCurve.Length < line_2.GeometryCurve.Length, line_list[i].Id)
-# #         print(line_list[i].GeometryCurve.Length, 'less than', line_2.GeometryCurve.Length)
-# #         i += 1  
+    # model_line = ModelLine(line)
+    # ref_line = model_line[i]
+    # second_line = model_line[]
+    # model_line.start_x

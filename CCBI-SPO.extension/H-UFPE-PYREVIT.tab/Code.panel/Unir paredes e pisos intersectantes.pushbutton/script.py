@@ -34,7 +34,7 @@ def join_geometry(doc, elements):
                                 if intersection and intersection.Volume > 0:
                                     try:
                                         DB.JoinGeometryUtils.JoinGeometry(doc, element, floor)
-                                        print("Elementos unidos: Parede {} e Piso {}".format(get_name(element), get_name(floor)))
+                                        print("Elementos unidos: Parede {} (ID {}) e Piso {} (ID {})".format(get_name(element), element.Id, get_name(floor), floor.Id))
                                     except Exception as e:
                                         print("Erro ao unir geometria: {}".format(e))
 
