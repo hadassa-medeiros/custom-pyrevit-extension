@@ -100,26 +100,29 @@ def create_wall(doc, bound_line, default_wall_type_id, level_id, misterious_para
 
 # print(grouped_lines)
 
-def longest_in(line_list):
-    if line_list[0].length >= lines[1].length:
+def longest(line_list):
+    if line_list[0].length > lines[1].length:
         longest = line_list[0]
     else:
         longest = line_list[1]
     return longest
 
-def shortest_in(line_list):
+def shortest_or_equal(line_list):
     if line_list[0].length < lines[1].length:
         shortest = line_list[0]
     else:
         shortest = line_list[1]
     return shortest
 
+def equal_length(line_list):
+    if line_list[0].length == lines[1].length:
+        return line_list[0]
+
 for lines in grouped_lines:
-    ref_line = longest_in(lines)
-    aux_line = shortest_in(lines)
-    # ref_line = shortest_in(lines)
-    # aux_line = longest_in(lines)
-    # print(ref_line.length, aux_line.length)
+    ref_line = longest(lines) or equal_length(lines)
+    aux_line = shortest_or_equal(lines)
+    # ref_line = shortest(lines)
+    # aux_line = longest(lines)
     # # determine line positioning condition relative to the other(s) in the same group
     print(ref_line.start_x, aux_line.start_x)
     is_right = is_vertical(ref_line) and ref_line.start_x > aux_line.start_x
@@ -129,57 +132,18 @@ for lines in grouped_lines:
     is_below = is_horizontal(ref_line) and ref_line.start_y < aux_line.start_y
 
     if is_right:
-        # a = ref_line.start_point - DB.XYZ(default_wall_thickness/2, .2, 0)
-        # b = ref_line.end_point - DB.XYZ(default_wall_thickness/2, -.2, 0)
         a = ref_line.start_point - DB.XYZ(default_wall_thickness/2, 0, 0)
         b = ref_line.end_point - DB.XYZ(default_wall_thickness/2, 0, 0)
     elif is_left:
-        # a = ref_line.start_point + DB.XYZ(default_wall_thickness/2, .2, 0)
-        # b = ref_line.end_point + DB.XYZ(default_wall_thickness/2, -.2, 0)
         a = ref_line.start_point + DB.XYZ(default_wall_thickness/2, 0, 0)
         b = ref_line.end_point + DB.XYZ(default_wall_thickness/2, 0, 0)
     elif is_above:
-        # a = ref_line.start_point - DB.XYZ(-.2, default_wall_thickness/2, 0)
-        # b = ref_line.end_point - DB.XYZ(.2, default_wall_thickness/2, 0)
         a = ref_line.start_point - DB.XYZ(0, default_wall_thickness/2, 0)
         b = ref_line.end_point - DB.XYZ(0, default_wall_thickness/2, 0)
     elif is_below:
-        # a = ref_line.start_point + DB.XYZ(-.2, default_wall_thickness/2, 0)
-        # b = ref_line.end_point + DB.XYZ(.2, default_wall_thickness/2, 0)
         a = ref_line.start_point + DB.XYZ(0, default_wall_thickness/2, 0)
         b = ref_line.end_point + DB.XYZ(0, default_wall_thickness/2, 0)
     else:
         None
     bound_line = DB.Line.CreateBound(a, b)
     create_wall(doc, bound_line, default_walltype_id, interface.levels[0].Id, 10, 0, False, False)
-        
-
-# # hadn't worked
-# while i < len(cad_wall_lines):
-#     n = i+1
-#     while n < len(cad_wall_lines):
-#         # compare the first line on the list with every other line
-#         ref_line = ModelLine(cad_wall_lines[i])
-#         next_line = ModelLine(cad_wall_lines[n])
-#         print('comparing now {} to {}:'.format(str(cad_wall_lines[i].Id), str(cad_wall_lines[n].Id)))
-#         lines_of_same_wall = [cad_wall_lines[i]]
-#         # if it matches the criteria (its possible and frequent that more than one matches the criteria)
-#         if share_point_in_perpendicular_axis(ref_line, next_line):
-#             lines_of_same_wall.append(str(cad_wall_lines[n].Id))
-#             grouped_lines.append(cad_wall_lines)
-#         n+=1
-#     i+=1
-
-    # cad_wall_lines.pop(i)
-    
-    # testing loop:
-
-    # if they match the criteria
-    #     group them together and 
-    #     remove them fromm the general list
-    #     start over
-
-    # model_line = ModelLine(line)
-    # ref_line = model_line[i]
-    # second_line = model_line[]
-    # model_line.start_x
