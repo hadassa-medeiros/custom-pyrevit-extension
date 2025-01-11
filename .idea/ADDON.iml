@@ -6,3 +6,12 @@
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
+<pushbutton>
+    <assembly>C:\path\to\your\script.dll</assembly>
+    <class>YourNamespace.YourClass</class>
+    <text>Meu Botão</text>
+    <tooltip>Este botão faz algo incrível!</tooltip>
+    <width>80</width> <!-- Largura personalizada -->
+    <height>40</height> <!-- Altura personalizada -->
+    <icon>C:\path\to\icon.png</icon> <!-- Opcional: Ícone do botão -->
+</pushbutton>

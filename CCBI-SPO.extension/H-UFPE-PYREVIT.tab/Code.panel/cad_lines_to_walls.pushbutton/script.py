@@ -84,11 +84,14 @@ for i in range(len(cad_wall_lines)-1):
     i+=1
     # mantenha a posicao do 1o em i e va incrementando a n e comparando-a com i ate acabar os itens
 
-def create_wall(doc, bound_line, default_wall_type_id, level_id, misterious_param_1 = 10, misterious_param_2 = 0 , flag_1 = False, flag_2 = False):
+def create_wall(doc, bound_line, default_wall_type_id, level_id, misterious_param_1 = 10, misterious_param_2 = 1, flag_1 = False, flag_2 = False):
     t = DB.Transaction(doc, "Create new wall instance from cad line")
     t.Start()
     try:
-        DB.Wall.Create(doc, bound_line, default_wall_type_id, level_id, 10, 0, False, False)
+        wall = DB.Wall.Create(doc, bound_line, default_wall_type_id, level_id, 10, 0, False, False)
+        wall_location_line = wall.get_Parameter(DB.BuiltInParameter.WALL_KEY_REF_PARAM)
+        if wall_location_line and wall_location_line.IsReadOnly == False:
+            wall_location_line.Set(0)  # Define Linha central da parede como Linha de localizacao
         # print("Wall created at {} and {}.".format(start_point, end_point))
     except Exception as e:
         print("Error creating wall instance: {}".format(e))
@@ -148,10 +151,7 @@ for lines in grouped_lines:
     else:
         None
     bound_line = DB.Line.CreateBound(a, b)
-    create_wall(doc, bound_line, default_walltype_id, interface.levels[0].Id, 10, 0 , False, False)
-
-
-
+    create_wall(doc, bound_line, default_walltype_id, interface.levels[0].Id, 10, 0, False, False)
         
 
 # # hadn't worked
