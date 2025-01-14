@@ -22,6 +22,9 @@ def is_horizontal(model_line):
 def is_vertical(model_line):
     return abs(model_line.end_x - model_line.start_x) == 0
 
+def is_diagonal(model_line):
+    return model_line.end_x - model_line.start_x != 0 and model_line.end_y - model_line.start_y != 0
+
 def offset_equals_wall_width(line_A, line_B):
     def dist_between_lines():
         if is_horizontal(line_B) and is_horizontal(line_A):
@@ -44,8 +47,7 @@ def are_parallel(line_A, line_B):
     end_B = line_B.end_point
 
     lines_share_same_plane = abs(start_A.Z - start_B.Z) < 1e-6
-
-    # print(start_A, end_A, start_B, end_B)
+   
     # Calcula os vetores diretores
     vector_A = end_A - start_A
     vector_B = end_B - start_B
@@ -62,34 +64,39 @@ def are_parallel(line_A, line_B):
     return lines_share_same_plane and is_parallel
 
 def share_point_in_perpendicular_axis(line_A, line_B):
-    # Calcula a interseção de duas linhas usando suas equações paramétricas
-    def line_equation(line):
-        x1, y1 = line.start_x, line.start_y
-        x2, y2 = line.end_x, line.end_y
-        # print("Line points: Start ({}, {}), End ({}, {})".format(x1, y1, x2, y2))
-        dx = x2 - x1
-        dy = y2 - y1
-        return x1, y1, dx, dy
-
-    x1, y1, dx1, dy1 = line_equation(line_A)
-    x2, y2, dx2, dy2 = line_equation(line_B)
-
-    # Resolve o sistema linear para encontrar o ponto de interseção
-    determinant = dx1 * dy2 - dx2 * dy1
-    # print(determinant)
-    if abs(determinant) < tolerance:
-        return False  # As linhas são paralelas ou coincidentes
-
-    t = ((x2 - x1) * dy2 - (y2 - y1) * dx2) / determinant
-    u = ((x2 - x1) * dy1 - (y2 - y1) * dx1) / determinant
-
-    if 0 <= t <= 1 and 0 <= u <= 1:
-        return True  # O ponto de interseção está dentro dos limites das linhas
+    # for two given lines, checks if they share a common point in the opposite axis
+    # to that in which they're located as straight horizontal (x) ou vertical (y) lines.
+    # This means they probably represent two faces of a same wall, if wall_thickness 
+    # condition is also true.
+    if is_horizontal(line_A) and is_horizontal(line_B):
+        if (
+            line_B.start_x <= line_A.start_x <= line_B.end_x
+        ) or (
+            line_A.start_x <= line_B.start_x <= line_A.end_x
+        ) or (
+            line_B.end_x <= line_A.end_x <= line_B.start_x
+        ) or (
+            line_A.end_x <= line_B.end_x <= line_A.start_x
+        ):
+            return True
+    elif is_vertical(line_A) and is_vertical(line_B):
+        if (
+            line_B.start_y >= line_A.start_y >= line_B.end_y
+        ) or (
+            line_A.start_y >= line_B.start_y >= line_A.end_y
+        ) or (
+            line_B.end_y >= line_A.end_y >= line_B.start_y
+        ) or (
+            line_A.end_y >= line_B.end_y >= line_A.start_y
+        ):
+            return True
+    elif is_diagonal(line_A) and is_diagonal(line_B):
+        return True
     return False
 
 grouped_lines = []
-i = 0
 
+i = 0
 for i in range(len(cad_wall_lines)-1):
     n = i+1
     ref_line = ModelLine(cad_wall_lines[i])
@@ -97,11 +104,7 @@ for i in range(len(cad_wall_lines)-1):
     while n < len(cad_wall_lines):
         next_line = ModelLine(cad_wall_lines[n])
         # print('comparing now {} to {}:'.format(str(cad_wall_lines[i].Id), str(cad_wall_lines[n].Id)))
-        # print(share_point_in_perpendicular_axis(
-        #     ref_line, next_line
-        #     ))
         # print(share_point_in_perpendicular_axis(ref_line, next_line))
-
         # print(offset_equals_wall_width(ref_line, next_line))
         # print(are_parallel(ref_line, next_line))
         if are_parallel(
@@ -111,17 +114,15 @@ for i in range(len(cad_wall_lines)-1):
             ) and share_point_in_perpendicular_axis(
                 ref_line, next_line
             ):
-    # guarde-os juntos na lista se match criteria
             lines_of_same_wall.append(next_line)
-            # remova da lista os que forem dando match
         # print(len(lines_of_same_wall))
         n+=1
-    # recomece do proximo da lista
     if len(lines_of_same_wall) > 1:
         grouped_lines.append(lines_of_same_wall)
     i+=1
-    # mantenha a posicao do 1o em i e va incrementando a n e comparando-a com i ate acabar os itens
+
 print(grouped_lines)
+
 def create_wall(doc, bound_line, default_wall_type_id, level_id, misterious_param_1 = 10, misterious_param_2 = 1, flag_1 = False, flag_2 = False):
     t = DB.Transaction(doc, "Create new wall instance from cad line")
     t.Start()
@@ -130,7 +131,6 @@ def create_wall(doc, bound_line, default_wall_type_id, level_id, misterious_para
         wall_location_line = wall.get_Parameter(DB.BuiltInParameter.WALL_KEY_REF_PARAM)
         if wall_location_line and wall_location_line.IsReadOnly == False:
             wall_location_line.Set(0)  # Define Linha central da parede como Linha de localizacao
-        # print("Wall created at {} and {}.".format(start_point, end_point))
     except Exception as e:
         print("Error creating wall instance: {}".format(e))
         pass
@@ -153,8 +153,10 @@ def shortest_or_equal(line_list):
     return shortest
 
 def equal_length(line_list):
-    if line_list[0].length == lines[1].length:
+    if (line_list[0].length - lines[1].length) < tolerance:
         return line_list[0]
+    else:
+        return line_list[1]
 
 for lines in grouped_lines:
     ref_line = longest(lines) or equal_length(lines)
@@ -182,8 +184,8 @@ for lines in grouped_lines:
         a = ref_line.start_point + DB.XYZ(0, default_wall_thickness/2, 0)
         b = ref_line.end_point + DB.XYZ(0, default_wall_thickness/2, 0)
     else:
-        a = ref_line.start_point + DB.XYZ(0, default_wall_thickness/2, 0)
-        b = ref_line.end_point + DB.XYZ(0, default_wall_thickness/2, 0)
+        a = ref_line.start_point + DB.XYZ(0, 0, 0)
+        b = ref_line.end_point + DB.XYZ(0, 0, 0)
     try:
         bound_line = DB.Line.CreateBound(a, b)
         create_wall(doc, bound_line, default_walltype_id, interface.levels[0].Id, 10, 0, False, False)
