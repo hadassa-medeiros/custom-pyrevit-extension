@@ -1,17 +1,26 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
 from revit_doc_interface import (RevitDocInterface, ModelLine, find_id_by_element_name, get_name, get_names, meter_to_double)
-import math
+# import math
+import unicodedata
+
+def normalize_string(input_string):
+    return unicodedata.normalize('NFKD', input_string).encode('ASCII', 'ignore').decode('ASCII')
 
 doc = __revit__.ActiveUIDocument.Document
-collect = DB.FilteredElementCollector(doc)
 
 interface = RevitDocInterface()
-
 # find groups of lines that represent the faces of a same wall and store them
 default_wall_width = meter_to_double(0.15)
+
+def default_wall_widths(list_of_common_wall_widths):
+    return [meter_to_double(common_w) for common_w in list_of_common_wall_widths]
+
+print(default_wall_widths([0.15, 0.20, 0.25, 0.30]))
 # print(default_wall_width)
 default_walltype_id = find_id_by_element_name(interface.walltypes, "GENERICA_15CM")
+
+all_levels = interface.levels
 
 cad_wall_lines = interface.filter_lines_by_name(["Parede"])
 tolerance = default_wall_width * 0.05 #allows +/- 2% variation to account for minor CAD drawing imprecisions
@@ -100,6 +109,9 @@ def share_point_in_perpendicular_axis(line_A, line_B):
 grouped_lines = []
 
 i = 0
+for l in interface.levels:
+    print(l.Id)
+
 for i in range(len(cad_wall_lines)):
     def lines_have_minimum_length(line_A, line_B):
         min_length = default_wall_width*1.5
@@ -110,7 +122,19 @@ for i in range(len(cad_wall_lines)):
     
     ref_line = ModelLine(cad_wall_lines[i])
     lines_of_same_wall = [ref_line]
-    
+    # def line_level_id(line):
+    #     line_sketch_plane = line.get_Parameter(DB.BuiltInParameter.SKETCH_PLANE_PARAM).AsString()
+    #     linel_level_name = line_sketch_plane.split()[-1]
+    #     linel_level_name = normalize_string(linel_level_name)  # Normaliza a string para remover acentos
+
+    #     for level in interface.levels:
+    #         print((normalize_string(level.Name) == linel_level_name)
+    #         line_level_id = level.Id if linel_level_name == normalize_string(level.Name) else None
+    #     print(linel_level_name, line_level_id)
+    #     return line_level_id
+
+    # line_level_id(cad_wall_lines[i])
+
     n = i+1
     while n < len(cad_wall_lines):
         next_line = ModelLine(cad_wall_lines[n])
@@ -174,7 +198,7 @@ for lines in grouped_lines:
     # print(ref_line.start_x, aux_line.start_x)
     # Vetores direção para linha de referência
     ref_dir = DB.XYZ(ref_line.end_x - ref_line.start_x, ref_line.end_y - ref_line.start_y, 0)
-
+    
     # Determina deslocamento para criar a linha entre as duas
     offset_x = default_wall_width / 2 if abs(ref_dir.X) < abs(ref_dir.Y) else 0
     offset_y = default_wall_width / 2 if abs(ref_dir.Y) < abs(ref_dir.X) else 0
@@ -188,7 +212,7 @@ for lines in grouped_lines:
     # Cria os novos pontos deslocados
     a = ref_line.start_point - DB.XYZ(offset_x, offset_y, 0)
     b = ref_line.end_point - DB.XYZ(offset_x, offset_y, 0)
-
+    
     # Tenta criar a nova parede
     try:
         bound_line = DB.Line.CreateBound(a, b)
