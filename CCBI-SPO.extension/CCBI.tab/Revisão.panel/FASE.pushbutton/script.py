@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
+from pyrevit import forms
 
 doc = __revit__.ActiveUIDocument.Document
 collector = DB.FilteredElementCollector(doc)
+
+# # allow user to work on all levesl at once or one at a time
+# selected_rooms_and_names = forms.SelectFromList.show(room_numbers_and_names, button_name='Select Rooms', multiselect=True)
 
 def get_phase_id_by_name(doc, phase_name):
     phases = DB.FilteredElementCollector(doc).OfClass(DB.Phase).ToElements()
@@ -11,60 +15,83 @@ def get_phase_id_by_name(doc, phase_name):
             return phase.Id
     return None
 
-target_phase_name = 'LEVANTAMENTO'
-target_phase_id = get_phase_id_by_name(doc, target_phase_name)
+target_phase_created = 'LEVANTAMENTO'
+target_phase_created_id = get_phase_id_by_name(doc, target_phase_created)
 
-def get_phase_created_id(elem):
-    return elem.get_Parameter(DB.BuiltInParameter.PHASE_CREATED).AsElementId()
+def get_phase_created(elem):
+    return elem.get_Parameter(DB.BuiltInParameter.PHASE_CREATED)
     
-def correct_elem_phase(elem):
-    incorrect_phase_created = get_phase_created_id(elem)
+def correct_elem_phase(elem, target_phase_created_id):
+    incorrect_phase_created = get_phase_created(elem).AsValueString()
 
     t = DB.Transaction(doc, "Correct created phase parameter")
     t.Start()
     try:
         param = elem.get_Parameter(DB.BuiltInParameter.PHASE_CREATED)
-        param.Set(target_phase_id)  # Define a altura (em metros)
+        param.Set(target_phase_created_id)  # Define a altura (em metros)
         print(
-            "Fase da parede ID {} corrigida de {} para {}"
-              .format(wall.Id, incorrect_phase_created, target_phase_id)
+            "Fase da elemento ID {} corrigida de {} para {}"
+              .format(element.Id, incorrect_phase_created, target_phase_created_id)
               )
     except Exception as e:
         print("Error: {}".format(e))
         pass
     t.Commit()
 
-all_walls = collector.OfCategory(
-    DB.BuiltInCategory.OST_Walls
-    ).WhereElementIsNotElementType()
+# all_phased_elements = collector.OfCategory(
+#     DB.BuiltInCategory.OST_elements
+#     ).WhereElementIsNotElementType()
+param_phase_created = DB.ElementId(DB.BuiltInParameter.PHASE_CREATED)
+param_phase_demolished = DB.ElementId(DB.BuiltInParameter.PHASE_DEMOLISHED)
 
-walls_in_incorrect_phase = []
+rule_phase_created = DB.ParameterFilterRuleFactory.CreateHasValueParameterRule(param_phase_created)
+rule_phase_demolished = DB.ParameterFilterRuleFactory.CreateHasValueParameterRule(param_phase_demolished)
 
-for wall in all_walls:
-    phase_created_id = wall.get_Parameter(
-        DB.BuiltInParameter.PHASE_CREATED
-        ).AsElementId()
-    if phase_created_id != target_phase_id:
-        wall_type = wall.get_Parameter(
+filter_has_phases_param = DB.ElementParameterFilter([rule_phase_created, rule_phase_demolished])
+
+phased_elements = collector.WherePasses(filter_has_phases_param).ToElements()
+
+for elem in phased_elements:
+    phase_created = elem.get_Parameter(DB.BuiltInParameter.PHASE_CREATED)
+    phase_demolished = elem.get_Parameter(DB.BuiltInParameter.PHASE_DEMOLISHED)
+    
+    created_phase_name = phase_created.AsValueString() if phase_created else "None"
+    demolished_phase_name = phase_demolished.AsValueString() if phase_demolished else "None"
+    
+    # print(
+    #     "Elemento {} | ID {} | Fase Criada: {} | Fase Demolida: {}".format(elem.Name, elem.Id, created_phase_name, demolished_phase_name)
+    # )
+
+elements_in_incorrect_phase = []
+
+for element in phased_elements:
+    phase_created_id = get_phase_created(element).AsElementId()
+    phase_created = get_phase_created(element).AsValueString()
+    if phase_created_id != target_phase_created_id:
+        element_type = element.get_Parameter(
             DB.BuiltInParameter.ELEM_FAMILY_AND_TYPE_PARAM
             ).AsValueString()
         print(
-            "Parede em fase criada incorreta '{}': {} (ID: {})"
-            .format(target_phase_name, wall_type, wall.Id)
+            "Elemento em fase incorreta ({}): {} (ID: {})"
+            .format(phase_created, element_type, element.Id)
         )
-        walls_in_incorrect_phase.append(wall)
-        correct_elem_phase(wall)
-if len(walls_in_incorrect_phase) == 1:
+        elements_in_incorrect_phase.append(element)
+
+for element in elements_in_incorrect_phase:
+    correct_elem_phase(element, target_phase_created_id)
+
+if len(elements_in_incorrect_phase) == 1:
     print(
-        "{} parede detectada fora da fase {} foi corrigida'."
-        .format(len(walls_in_incorrect_phase), target_phase_name)
+        "{} elemento detectado fora da fase {} foi corrigido'."
+        .format(len(elements_in_incorrect_phase), target_phase_created)
         )
-elif len(walls_in_incorrect_phase) > 1:
+elif len(elements_in_incorrect_phase) > 1:
+    print('_'*50)
     print(
-        "{} paredes detectadas fora da fase {} foram corrigidas'."
-        .format(len(walls_in_incorrect_phase), target_phase_name)
+        "{} elementos detectados fora da fase {} foram corrigidos."
+        .format(len(elements_in_incorrect_phase), target_phase_created)
         )
 else:
     print(
-        "Todas as paredes estão na fase '{}'!".format(target_phase_name)
+        "Todos os elementos estão na fase '{}'!".format(target_phase_created)
         )
