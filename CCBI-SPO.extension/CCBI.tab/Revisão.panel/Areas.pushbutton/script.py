@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from Autodesk.Revit.DB import FilteredElementCollector, SpatialElement
 import Autodesk.Revit.DB as DB
 import csv
 import codecs
@@ -22,7 +21,7 @@ def read_csv(file_path):
 
 # Coleta os ambientes do modelo
 def get_model_rooms(doc):
-    collector = FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Rooms)
+    collector = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Rooms)
     room_elements_list = collector.ToElements()
     return room_elements_list
     # return [room.LookupParameter("Name").AsString() for room in collector if room.Category.Name == "Rooms"]
@@ -35,7 +34,10 @@ def get_model_rooms(doc):
 def myFunc(e):
   return e['Number']
 
-def model_rooms_info(room_elements_list):
+# Coleta os ambientes do modelo e retorna suas informacoes basicas
+def model_rooms_info(doc):
+    collector = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Rooms)
+    room_elements_list = collector.ToElements()
     all_rooms_info = []
     for room in room_elements_list:
         name = room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsValueString()
@@ -53,13 +55,9 @@ def model_rooms_info(room_elements_list):
 # Caminho para o CSV
 csv_file_path = "C:/Users/Hadassa/Documents/UFPE-SPO-CCBI/CCS Bloco F/Planilha_CCS_Bloco_F_Areas.csv"
 
-# Comparação
 csv_rooms = read_csv(csv_file_path)
-model_rooms = get_model_rooms(doc)
-# print(get_model_room_numbers(model_rooms))
-model_rooms_dict = sorted(model_rooms_info(model_rooms), key=lambda x: x['Number'])
+model_rooms_dict = sorted(model_rooms_info(doc), key=lambda x: x['Number'])
 
-# print(model_rooms_dict)
 rooms_Terreo = []
 rooms_floor1 = []
 rooms_floor2 = []
@@ -79,9 +77,7 @@ for i, row in enumerate(csv_rooms):
         last_row = i - 1 # A penultima linha anterior à linha vazia
         start_end.append(last_row)
     #     rows_with_room_info = range(first_row, last_row)
-
-# Exibir os índices capturados
-print("Índices relevantes:", start_end)
+# print("Índices relevantes:", start_end)
 
 rooms_by_level = {}
 for i in range(len(start_end)):
@@ -91,12 +87,9 @@ for i in range(len(start_end)):
         lines = range(start_end[i-1], start_end[i])
         print(lines)
         rooms_by_level[i//2] = lines
-print(rooms_by_level)
-
-print(len(rooms_by_level[0]), len(rooms_by_level[1]), len(rooms_by_level[2]))
-
-# rows_by_level = 
-def table_rooms_info(list_of_row_indexes):
+# print(rooms_by_level)
+# print(len(rooms_by_level[0]), len(rooms_by_level[1]), len(rooms_by_level[2]))
+def table_rooms_info_by_level(list_of_row_indexes):
     all_rooms_info = []
     for i in list_of_row_indexes:
         row = csv_rooms[i]
@@ -111,36 +104,48 @@ def table_rooms_info(list_of_row_indexes):
         all_rooms_info.append(room_info)
     return all_rooms_info
 
-print(table_rooms_info(rooms_by_level[0]))
-print(len(rooms_by_level[0]) + len(rooms_by_level[1]) + len(rooms_by_level[2]))
+def table_rooms_info(dict_of_row_indexes):
+    print(dict_of_row_indexes)
+    all_rooms_info = []
+    for v in dict_of_row_indexes.values():
+        # rooms_info_by_level = []
+        # print(v)
+        for i in v:
+            # print(i)
+            row = csv_rooms[i]
+            r_number = row[0]
+            r_name = row[1]
+            r_area = row[2]
+            room_info = {
+                'Number': r_number,
+                'Name': r_name,
+                'Area': r_area
+                }
+            # rooms_info_by_level.append(room_info)
+            all_rooms_info.append(room_info)
+    return all_rooms_info
+# print(table_rooms_info_by_level(rooms_by_level[0]))
+# print(table_rooms_info(rooms_by_level))
+table_rooms_count = len(table_rooms_info(rooms_by_level))
+model_rooms_count = len(model_rooms_dict)
 
-# for i in rooms_Terreo_index:
-#     room_Terreo_info = csv_rooms[i]
-#     r_number = room_Terreo_info[0]
-#     r_name = room_Terreo_info[1]
-#     r_area = room_Terreo_info[2]
-#     room_info = {
-#         'Number': r_number,
-#         'Name': r_name,
-#         'Area': r_area
-#         }
-#     print(room_info)
-# Check if lengths are the same
-# if len(model_rooms_dict) != len(d2):
-#     print(False)
-# else:
-  
+# conferir se quantidade total de ambientes é a mesma na tabela e no modelo
+if table_rooms_count == model_rooms_count:
+    print('a contagem total de ambientes corresponde')
+else:
+    print(
+        'ha {} ambientes no modelo em relacao a planilha!'
+        .format(model_rooms_count - table_rooms_count)
+        )
+
 #     # Compare each key and value
 #     for key in model_rooms_dict:
 #         if key not in d2 or model_rooms_dict[key] != d2[key]:
 #             print(False)
 #             break
 #     else:
-      
 #         # This runs only if no mismatches are found
 #         print(True)
 
-
-missing_in_model = [room for room in csv_rooms if room not in model_rooms]
-
+missing_in_model = [room for room in csv_rooms if room not in model_rooms_info]
 # print("Faltando no modelo:", missing_in_model)
