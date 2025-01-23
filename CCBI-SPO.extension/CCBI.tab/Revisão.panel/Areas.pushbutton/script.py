@@ -51,8 +51,6 @@ model_rooms = get_model_rooms(doc)
 model_rooms_dict = sorted(model_rooms_info(model_rooms), key=lambda x: x['Number'])
 
 # print(model_rooms_dict)
-print('----------------------------------')
-headers = []
 rooms_Terreo = []
 rooms_floor1 = []
 rooms_floor2 = []
@@ -69,32 +67,28 @@ for i, row in enumerate(csv_rooms):
         start_end.append(first_row)  # Adiciona o índice inicial
     # Quando encontrar a linha com a contagem total por pavimento, capturar o indice da penultima linha (ultimo ambiente do pavimento em questao)
     elif 'TOTAL' in row[1] and ' E ' not in row[1]:
-        last_row = i - 2 # A penultima linha anterior à linha vazia
+        last_row = i - 1 # A penultima linha anterior à linha vazia
         start_end.append(last_row)
     #     rows_with_room_info = range(first_row, last_row)
 
 # Exibir os índices capturados
 print("Índices relevantes:", start_end)
 
-# for row in csv_rooms:
-#     # print(row[0])
-#     # gravar linhas imediatamente antes e imediatamente apos as linhas que contem informacoes de ambientes por nivel
-#     i = csv_rooms.index(row)
-#     start_end_terreo = []
-#     if 'AMBIENTE' in row[0]:
-#         first_row = i + 1
-#         while row[0] != '' and row[0] != :
-#             headers.append(i)
-#         # print(headers)
-#     # elif 'TOTAL' in row[1] and csv_rooms[i-2][1] != '':
-#     #     last_row = i - 2
-#     #     rows_with_room_info = range(first_row, last_row)
-#     #     headers.append(rows_with_room_info)
+rooms_by_level = {}
+for i in range(len(start_end)):
+    if i-1 < 0 or i % 2 == 0:
+        pass
+    else:
+        lines = range(start_end[i-1], start_end[i])
+        print(lines)
+        rooms_by_level[i//2] = lines
+print(rooms_by_level)
 
-print(headers)
+print(len(rooms_by_level[0]), len(rooms_by_level[1]), len(rooms_by_level[2]))
+
+# rows_by_level = 
 def table_rooms_info(list_of_row_indexes):
     all_rooms_info = []
-
     for i in list_of_row_indexes:
         row = csv_rooms[i]
         r_number = row[0]
@@ -108,16 +102,9 @@ def table_rooms_info(list_of_row_indexes):
         all_rooms_info.append(room_info)
     return all_rooms_info
 
-# rows_rooms_terreo = range(headers[0]+1, headers[1])
-# rows_rooms_floor1 = range(headers[1]+1, headers[2])
-# rows_rooms_floor2 = range(headers[2]+1, 100)
+print(table_rooms_info(rooms_by_level[0]))
+print(len(rooms_by_level[0]) + len(rooms_by_level[1]) + len(rooms_by_level[2]))
 
-# print(table_rooms_info(rows_rooms_terreo))
-# print('---------------------------')
-# print(table_rooms_info(rows_rooms_floor1))
-# print('---------------------------')
-# print(table_rooms_info(rows_rooms_floor2))
-# print('---------------------------')
 # for i in rooms_Terreo_index:
 #     room_Terreo_info = csv_rooms[i]
 #     r_number = room_Terreo_info[0]
