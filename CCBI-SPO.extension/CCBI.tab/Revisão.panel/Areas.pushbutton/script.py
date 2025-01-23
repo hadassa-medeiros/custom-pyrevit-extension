@@ -3,13 +3,22 @@ from Autodesk.Revit.DB import FilteredElementCollector, SpatialElement
 import Autodesk.Revit.DB as DB
 import csv
 import codecs
+import unicodedata
+
 doc = __revit__.ActiveUIDocument.Document
 
-# Lê o arquivo CSV
+# Função para normalizar strings
+def normalize_string(s):
+    if isinstance(s, str):
+        return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("utf-8").strip()
+    return s  # Caso não seja string, retorna sem alterações
+
+# Lê o arquivo CSV e normaliza
 def read_csv(file_path):
     with codecs.open(file_path, mode='r', encoding='utf-8') as file:
         csv_reader = csv.reader(file)
-        return [row for row in csv_reader]
+        # Normaliza todas as strings do CSV
+        return [[normalize_string(cell) for cell in row] for row in csv_reader]
 
 # Coleta os ambientes do modelo
 def get_model_rooms(doc):
