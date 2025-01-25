@@ -53,31 +53,33 @@ def model_rooms_info(doc):
     return all_rooms_info
 
 # Caminho para o CSV
-csv_file_path = "C:/Users/Hadassa/Documents/UFPE-SPO-CCBI/CCS Bloco F/Planilha_CCS_Bloco_F_Areas.csv"
+# csv_file_path = "C:/Users/Hadassa/Documents/UFPE-SPO-CCBI/CCS Bloco F/Planilha_CCS_Bloco_F_Areas.csv"
+csv_file_path = "C:/Users/Hadassa/Documents/UFPE-SPO-CCBI/CCEN Adm/CCEN_Administracao_Areas.csv"
 
 csv_rooms = read_csv(csv_file_path)
-model_rooms_dict = sorted(model_rooms_info(doc), key=lambda x: x['Number'])
+model_rooms_data = sorted(model_rooms_info(doc), key=lambda x: x['Number'])
 
 rooms_Terreo = []
 rooms_floor1 = []
 rooms_floor2 = []
 
+keywords_of_final_sum_row = [' E ', ',', 'PAVIMENTOS']
 # Inicialize a lista para armazenar os índices
 start_end = []
 # Percorra cada linha no CSV
 for i, row in enumerate(csv_rooms):
     # level = 0
     # Se encontrar a palavra "AMBIENTE", começa o processamento
-    if 'AMBIENTE' in row[0]:
+    if 'AMBIENTE' in row[0] and 'DENOMINACAO' in row[1]:
         # Capture o índice da primeira linha do nível
         first_row = i + 1  # A linha seguinte à linha "AMBIENTE"
-        start_end.append(first_row)  # Adiciona o índice inicial
+        start_end.append(first_row)
     # Quando encontrar a linha com a contagem total por pavimento, capturar o indice da penultima linha (ultimo ambiente do pavimento em questao)
-    elif 'TOTAL' in row[1] and ' E ' not in row[1]:
+    elif 'TOTAL' in row[1] and all(keyword not in row[1] for keyword in keywords_of_final_sum_row):
         last_row = i - 1 # A penultima linha anterior à linha vazia
         start_end.append(last_row)
     #     rows_with_room_info = range(first_row, last_row)
-# print("Índices relevantes:", start_end)
+print("Índices relevantes:", start_end)
 
 rooms_by_level = {}
 for i in range(len(start_end)):
@@ -85,7 +87,7 @@ for i in range(len(start_end)):
         pass
     else:
         lines = range(start_end[i-1], start_end[i])
-        print(lines)
+        # print(lines)
         rooms_by_level[i//2] = lines
 # print(rooms_by_level)
 # print(len(rooms_by_level[0]), len(rooms_by_level[1]), len(rooms_by_level[2]))
@@ -105,7 +107,7 @@ def table_rooms_info_by_level(list_of_row_indexes):
     return all_rooms_info
 
 def table_rooms_info(dict_of_row_indexes):
-    print(dict_of_row_indexes)
+    # print(dict_of_row_indexes)
     all_rooms_info = []
     for v in dict_of_row_indexes.values():
         # rooms_info_by_level = []
@@ -127,25 +129,58 @@ def table_rooms_info(dict_of_row_indexes):
 # print(table_rooms_info_by_level(rooms_by_level[0]))
 # print(table_rooms_info(rooms_by_level))
 table_rooms_count = len(table_rooms_info(rooms_by_level))
-model_rooms_count = len(model_rooms_dict)
+model_rooms_count = len(model_rooms_data)
 
 # conferir se quantidade total de ambientes é a mesma na tabela e no modelo
 if table_rooms_count == model_rooms_count:
-    print('a contagem total de ambientes corresponde')
+    print('A contagem total de ambientes corresponde.')
 else:
     print(
-        'ha {} ambientes no modelo em relacao a planilha!'
+        'Há diferenca de {} ambientes no modelo em relação à planilha!'
         .format(model_rooms_count - table_rooms_count)
-        )
+    )
+
+# Compare as salas que estão na tabela, mas não no modelo
+table_rooms_data = table_rooms_info(rooms_by_level)
+
+def normalize_room_info(room):
+    return {
+        'Number': int(room['Number']) if isinstance(room['Number'], str) else room['Number'],
+        'Name': normalize_string(room['Name']).strip().upper(),
+        'Area': float(room['Area']) if isinstance(room['Area'], str) else room['Area']
+    }
+
+# Normalize os dados antes de comparar
+normalized_model_rooms = [normalize_room_info(room) for room in model_rooms_data]
+normalized_table_rooms = [normalize_room_info(room) for room in table_rooms_data]
+
+# print(normalized_model_rooms)
+# print(normalized_table_rooms)
+
+# Comparar cada informacao (numero, nome e area) das duas fontes e avisar se ha divergencias
+
+for dict1, dict2 in zip(normalized_model_rooms, normalized_table_rooms):
+    print(dict1['Number'], dict1['Name'], '{:.2f}'.format(dict1['Area']))
+    if dict1["Name"] != dict2["Name"]:
+        print("{} vs. {}".format(dict1["Name"], dict2["Name"]))
+    elif dict1['Number'] != dict2['Number']:
+        print(" {} vs. {}".format(dict1['Number'], dict2['Number']))
+    elif dict1['Area'] != dict2['Area']:
+        print(" {} vs. {}".format(dict1['Area'], dict2['Area']))
+    else:
+        print('Informacoes dos ambientes sao iguais')
+    print('-----------------------------------')
+
+        # print("Nomes dos ambientes equivalem: {} (modelo) != {} (planilha)".format(dict1, dict2))
+# else:
+#     print("Todos os ambientes da tabela estão presentes no modelo!")
+
 
 #     # Compare each key and value
-#     for key in model_rooms_dict:
-#         if key not in d2 or model_rooms_dict[key] != d2[key]:
+#     for key in model_rooms_data:
+#         if key not in d2 or model_rooms_data[key] != d2[key]:
 #             print(False)
 #             break
 #     else:
 #         # This runs only if no mismatches are found
 #         print(True)
-
-missing_in_model = [room for room in csv_rooms if room not in model_rooms_info]
-# print("Faltando no modelo:", missing_in_model)
