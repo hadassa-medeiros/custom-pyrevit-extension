@@ -137,7 +137,11 @@ for selected_room_number in selected_room_numbers:
     # nas respectivas categorias relevantes
     wall_area_count_by_room = 0
 
-
+    # transformar em dicionario contendo nome do ambiente, contagem total associada a revestimento encontrado e a categoria especifica
+    # a qual pertence (forro/teto, piso ou parede)
+    total_areas_by_finishing_material = [    
+    ]
+    
     for elem in intersecting_elem:
         try:
             elem_category = str(elem.Category.BuiltInCategory)
