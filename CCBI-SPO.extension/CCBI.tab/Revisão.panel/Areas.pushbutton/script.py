@@ -158,7 +158,6 @@ normalized_table_rooms = [normalize_room_info(room) for room in table_rooms_data
 # print(normalized_table_rooms)
 
 # Comparar cada informacao (numero, nome e area) das duas fontes e avisar se ha divergencias
-
 for dict1, dict2 in zip(normalized_model_rooms, normalized_table_rooms):
     print(dict1['Number'], dict1['Name'], '{:.2f}'.format(dict1['Area']))
     if dict1["Name"] != dict2["Name"]:
