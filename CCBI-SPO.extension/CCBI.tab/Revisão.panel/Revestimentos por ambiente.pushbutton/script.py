@@ -139,8 +139,12 @@ for selected_room_number in selected_room_numbers:
 
     # transformar em dicionario contendo nome do ambiente, contagem total associada a revestimento encontrado e a categoria especifica
     # a qual pertence (forro/teto, piso ou parede)
-    total_areas_by_finishing_material = [    
-    ]
+    total_areas_by_finishing_material = {
+        'Ambiente': str,
+        'Piso': [{}],
+        'Parede': [{}],
+        'Forro': [{}]
+    }
     
     for elem in intersecting_elem:
         try:
@@ -166,9 +170,6 @@ for selected_room_number in selected_room_numbers:
                 elem_area = float(elem.get_Parameter(BuiltInParameter.HOST_AREA_COMPUTED).AsValueString().split(' ')[0])
                 # print('descricao marca e nome', elem_type_description, elem_type_mark, elem_type_name)
                 # print('{}, in {}-{} - marca de tipo: {}'.format(elem_category, room.Number, room_name, elem_type_mark))
-                # print(layers, elem_category)
-                # print(elem_area)
-                # #funcionou.
                 # if elem_type_mark == '06':
                 #     t = Transaction(doc, "applying floor finish material to room's parameter")
                 #     t.Start()
@@ -210,12 +211,10 @@ for selected_room_number in selected_room_numbers:
                                   .format(elem_type_name))
                     t.Commit()
 
-
         except AttributeError:
             pass
 
     try:
-
         print('PAREDE:')
         if len(wall_mats) == 0:
             print('NENHUM REVESTIMENTO DE PAREDE IDENTIFICADO')
