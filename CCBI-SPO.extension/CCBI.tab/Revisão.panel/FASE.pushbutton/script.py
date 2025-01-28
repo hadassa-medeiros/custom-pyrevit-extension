@@ -9,7 +9,7 @@ collector = DB.FilteredElementCollector(doc)
 # selected_rooms_and_names = forms.SelectFromList.show(room_numbers_and_names, button_name='Select Rooms', multiselect=True)
 
 def get_phase_id_by_name(doc, phase_name):
-    phases = DB.FilteredElementCollector(doc).OfClass(DB.Phase).ToElements()
+   g phases = DB.FilteredElementCollector(doc).OfClass(DB.Phase).ToElements()
     for phase in phases:
         if phase.Name == phase_name:
             return phase.Id
