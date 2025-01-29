@@ -38,7 +38,7 @@ class RevitDocInterface:
 
     @property
     def levels(self):
-        return map_cat_to_elements(self, 'levels')
+        return list(map_cat_to_elements(self, 'levels'))
     
     @property
     def materials(self):

@@ -54,6 +54,9 @@ relevant_categories = [
 
 # for room in interface.rooms:
 #     print(get_name(room))
+
+# Correct rooms upper limit to avoid collecting floor/wall elements from above
+levels = interface.levels
 room_numbers_and_names = ["{} - {}".format(
     get_room_number(room),
     # room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString()
@@ -74,7 +77,40 @@ for selected_room_number in selected_room_numbers:
     print('{}------------------------------'.format(room.Number))
 
     # Useful information about project's rooms:
+
+
+
+    room_default_height_offset = int(3 * 3.28084)  # Value AsDouble that Equals to 2.74m
+    room_upper_offset = room.get_Parameter(DB.BuiltInParameter.ROOM_UPPER_OFFSET)
+    room_upper_offset_metric = float(room_upper_offset.AsDouble())/3.280840
+    room_level_elev = (room.Level).get_Parameter(DB.BuiltInParameter.LEVEL_ELEV).AsDouble()
+    room_upper_level = room.get_Parameter(DB.BuiltInParameter.ROOM_UPPER_LEVEL).AsElementId()
+    room_id = room.Id.ToString()
     room_name = get_name(room)
+
+    room_bbox = room.get_BoundingBox(doc.ActiveView)
+    room_outline = DB.Outline(room_bbox.Min, room_bbox.Max)
+    # Establishing rooms as filters to elements
+    room_as_filter = DB.BoundingBoxIntersectsFilter(room_outline)# Create filter
+    intersecting_elem = DB.FilteredElementCollector(doc).WherePasses(room_as_filter).ToElements() # Using filter to retrieve elements
+    # list_python_collected_elements = ['room {}: {}'.format(room),list(collected_intersecting_elements)]
+
+    for level in levels:
+        try:
+            level_above = levels[levels.index(level) + 1]
+            level_above_elev = level_above.get_Parameter(DB.BuiltInParameter.LEVEL_ELEV).AsDouble()
+            floor_to_floor_height = level_above_elev - room_level_elev # This value is in the Revit's format AsDouble, not in meters.
+            new_rooms_upper_offset = floor_to_floor_height - .7
+            new_rooms_upper_offset_metric = new_rooms_upper_offset/3.280840
+            if room.Level.Id == level.Id and floor_to_floor_height > 0:
+                t = DB.Transaction(doc, "Change room's upper offset value in meters")
+                t.Start()
+                room_upper_offset.Set(new_rooms_upper_offset)
+                t.Commit()
+                print("Altura do ambiente {} corrigida de {}m para {}m.".format(room_name, room_upper_offset_metric, round(new_rooms_upper_offset_metric,3)))
+        except IndexError:
+            pass
+
     room_area = float(room.get_Parameter(DB.BuiltInParameter.ROOM_AREA).AsValueString()[:4])
     room_bounding_box = room.get_BoundingBox(doc.ActiveView)
     room_outline = DB.Outline(room_bounding_box.Min, room_bounding_box.Max)
@@ -111,7 +147,7 @@ for selected_room_number in selected_room_numbers:
 
 
 
-    
+
 #     #Objeto que ira armazenar soma total de areas por revestimento encontrado no ambiente,
 #     # nas respectivas categorias relevantes
 #     wall_area_count_by_room = 0
