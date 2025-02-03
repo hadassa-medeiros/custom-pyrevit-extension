@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import clr
 import csv
+import codecs
 import Autodesk.Revit.DB as DB
 clr.AddReference('RevitAPI')
 import os
@@ -50,20 +51,9 @@ selected_room_numbers = [selected.split(" - ")[0] for selected in selected_rooms
 selected_room_names = [selected.split(" - ")[1] for selected in selected_rooms_and_names]
 
 output_path = 'C:\Users\Hadassa\Documents\UFPE-SPO-CCBI\Relatorios\Areas_rev_ambientes{}.csv'.format(doc.Title)
-arquivo_csv = open(output_path, 'w')
+arquivo_csv = codecs.open(output_path, 'wb', encoding='utf-8')
 escritor = csv.writer(arquivo_csv)
 escritor.writerow(['TABELA DE AREAS DE REVESTIMENTO POR AMBIENTE'])
-
-# room_data = {
-#     'NUMERO': 0,
-#     'NOME': '',
-#     'AREA': 0.0,
-#     'REVESTIMENTOS': {
-#         'PISOS': [0,' m2'],
-#         'PAREDES': [0,' m2'],
-#         'FORROS': [0,' m2']
-#     }
-#  }
 
 room_data = {
     'AMBIENTE': str,
@@ -74,7 +64,6 @@ room_data = {
     }
 }
 
-data = []
 escritor.writerow([key for key in room_data.keys()])
 escritor.writerow([''] + [key for key in room_data['REVESTIMENTOS'].keys()])
 
@@ -142,33 +131,22 @@ for selected_room_number in selected_room_numbers:
                     e.get_Parameter(DB.BuiltInParameter.HOST_AREA_COMPUTED)
                     .AsValueString().split(' ')[0]
                     ), 2)
-#                 # print(elem_area, ' - ', e.Name)
-           
-                # for key,value in ...room_data['Revestimentos']
-                #     escritor.writerow([
-                #         room_data['Categoria'],
-
-                #         ])
-                # for item in room_data['Revestimentos']['Paredes']:
-                #     escritor.writerow([item.keys])
-                    #gerar csv relatorio
-
-#         # print(type(elem_compound_structure))
-#         # print([[type(layer.LayerId), str(layer.Function)] for layer in elem_layers])
-#         # print(e.get_Parameter(DB.BuiltInParameter.HOST_AREA_COMPUTED).AsValueString())
-#     from pprint import pprint
-#     for k,v in room_data.items():
-#         pprint(v)
-#         escritor.writerow([v])
-# escritor.writerow([finish_category for finish_category in room_data.keys() if finish_category==elem_category])
+                room_data['REVESTIMENTOS'][elem_category][0] += elem_area 
+                print(elem_area, ' - ', e.Name)
+        # from pprint import pprint
+        # for k,v in room_data.items():
+        #     pprint(v)
     escritor.writerow(
-        room_data['AMBIENTE'], 
-        ['{:.2f}{}'.format(v[0], v[1]) for v in room_data['REVESTIMENTOS'].values()]
-         )
-    # for key, value in room_data['REVESTIMENTOS'].items():
-    #     # Verificando se value é uma lista com dois itens, como esperado
-    #     if isinstance(value, list) and len(value) == 2:
-    #         escritor.writerow(['{} - {}'.format(value[0],value[1])])
+        [room_data['AMBIENTE']] + 
+        ['{:.2f}{}'.format(v[0], v[1]) for v in room_data['REVESTIMENTOS'].values()])
+    room_data = {
+        'AMBIENTE': str,
+        'REVESTIMENTOS': {
+            'PISOS': [.0,' m2'],
+            'PAREDES': [.0,' m2'],
+            'FORROS': [.0,' m2']
+        }
+    }
 arquivo_csv.close()
 os.startfile(output_path)
 # end of 1st part of filtering process
@@ -183,52 +161,4 @@ os.startfile(output_path)
             #   room number, name and area
             #   finishing name + total area sum + category(wall,floor,ceiling)
 
-
     # write the data in a csv file and save it
-
-
-
-#     #Objeto que ira armazenar soma total de areas por revestimento encontrado no ambiente,
-#     # nas respectivas categorias relevantes
-#     wall_area_count_by_room = 0
-
-#     # transformar em dicionario contendo nome do ambiente, contagem total associada a revestimento encontrado e a categoria especifica
-#     # a qual pertence (forro/teto, piso ou parede)
-#     total_areas_by_finishing_material = {
-#         'Ambiente': str,
-#         'Piso': [{}],
-#         'Parede': [{}],
-#         'Forro': [{}]
-#     }
-    
-#     for elem in intersecting_elem:
-#         try:
-#             elem_category = elem.Category.DB.BuiltInCategory
-#             elem_type = doc.GetElement(elem.GetTypeId())
-
-#             elem_type_name = elem_type.get_Parameter(DB.BuiltInParameter.SYMBOL_NAME_PARAM).AsString()
-#             elem_area = float((elem.LookupParameter('Área').AsValueString())[:5])
-#             def is_relevant_category_and_inside_room():
-#                 if elem_category == 'OST_Floors' and room_area * .97 < elem_area < room_area * 1.03:
-#                     return True
-#                 elif elem_category == 'OST_Walls' or elem_category == 'OST_Ceilings':
-#                     return True
-#                 else:
-#                     return False
-                
-#             if 'REV' in elem_type_name or 'SPO' in elem_type_name and is_relevant_category_and_inside_room():
-#                 # print('{}, {}, cód. ID {}'.format(elem.Name, elem.Category.Name, elem.Id))
-#                 elem_structure = DB.HostObjAttributes.GetCompoundStructure(elem_type)
-#                 layers = elem_structure.GetLayers()
-#                 elem_type = doc.GetElement(elem.GetTypeId())
-#                 elem_type_description = elem_type.get_Parameter(DB.BuiltInParameter.ALL_MODEL_DESCRIPTION).AsString()
-#                 elem_area = float(elem.get_Parameter(DB.BuiltInParameter.HOST_AREA_COMPUTED).AsValueString().split(' ')[0])
-#                 # print('descricao marca e nome', elem_type_description, elem_type_mark, elem_type_name)
-#                 # print('{}, in {}-{} - marca de tipo: {}'.format(elem_category, room.Number, room_name, elem_type_mark))
-#                 if elem_category == DB.BuiltInCategory.OST_Walls:
-#                     wall_area_count_by_room = wall_area_count_by_room + elem_area
-#                     print('Area total acumulada do revestimento de parede: ', wall_area_count_by_room)
-
-#                 elif elem_category == DB.BuiltInCategory.OST_Floors:
-#         except AttributeError:
-#             pass
