@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import clr
 import csv
-import subprocess
 import Autodesk.Revit.DB as DB
 clr.AddReference('RevitAPI')
+import os
 
 from revit_doc_interface import (
     RevitDocInterface,
@@ -52,16 +52,31 @@ selected_room_names = [selected.split(" - ")[1] for selected in selected_rooms_a
 output_path = 'C:\Users\Hadassa\Documents\UFPE-SPO-CCBI\Relatorios\Areas_rev_ambientes{}.csv'.format(doc.Title)
 arquivo_csv = open(output_path, 'w')
 escritor = csv.writer(arquivo_csv)
-escritor.writerow(['Numero','Nome', 'Nome revestimento', 'Area revestimento', 'Categoria'])
+escritor.writerow(['TABELA DE AREAS DE REVESTIMENTO POR AMBIENTE'])
 
-data_by_room = {
-    'Numero': 00,
-    'Nome': '',
-    'Area': 0,
-    'Revestimentos': {'Pisos': [], 'Paredes': [], 'Forros': []}
-    # 'Pisos': 0,
-    # 'Forro': 0
+# room_data = {
+#     'NUMERO': 0,
+#     'NOME': '',
+#     'AREA': 0.0,
+#     'REVESTIMENTOS': {
+#         'PISOS': [0,' m2'],
+#         'PAREDES': [0,' m2'],
+#         'FORROS': [0,' m2']
+#     }
+#  }
+
+room_data = {
+    'AMBIENTE': str,
+    'REVESTIMENTOS': {
+        'PISOS': [.0,' m2'],
+        'PAREDES': [.0,' m2'],
+        'FORROS': [.0,' m2']
+    }
 }
+
+data = []
+escritor.writerow([key for key in room_data.keys()])
+escritor.writerow([''] + [key for key in room_data['REVESTIMENTOS'].keys()])
 
 for selected_room_number in selected_room_numbers:
     selected_room_element = next(room for room in interface.rooms if
@@ -95,7 +110,7 @@ for selected_room_number in selected_room_numbers:
                 t.Start()
                 room_upper_offset.Set(new_rooms_upper_offset)
                 t.Commit()
-                print("Altura do ambiente {} corrigida de {}m para {}m.".format(room_name, room_upper_offset_metric, round(new_rooms_upper_offset_metric,3)))
+                # print("Altura do ambiente {} corrigida de {}m para {}m.".format(room_name, room_upper_offset_metric, round(new_rooms_upper_offset_metric,3)))
         except IndexError:
             pass
 
@@ -110,54 +125,52 @@ for selected_room_number in selected_room_numbers:
     is_within_room_space,
     combined_categories_filter
 ])
-    data_by_room['Numero'] = selected_room_number
-    data_by_room['Nome'] = room_name
-    data_by_room['Area'] = room_area
+    room_data['AMBIENTE'] = '{} - {}'.format(selected_room_number, room_name)
+    # room_data['NOME'] = room_name
+    # room_data['AREA'] = room_area
 
-    escritor.writerow([
-        data_by_room['Numero'], data_by_room['Nome'], data_by_room['Area']
-                        ])
-   
     elements_intersected_by_room = DB.FilteredElementCollector(doc).WherePasses(combined_filter).ToElements() # Using filter to retrieve elements
     for e in elements_intersected_by_room:
         #quero que ele so colete pisos q tenham layer com function == Finish2
         elem_type = doc.GetElement(e.GetTypeId())
         elem_layers = elem_type.GetCompoundStructure().GetLayers()
-        elem_category = e.get_Parameter(DB.BuiltInParameter.ELEM_CATEGORY_PARAM).AsValueString()
+        elem_category = e.get_Parameter(DB.BuiltInParameter.ELEM_CATEGORY_PARAM).AsValueString().upper()
+       
         for layer in elem_layers:
             if any(str(layer.Function) == v for v in ['Finish1', 'Finish2']):
-                elem_area = float(
-                    e.get_Parameter(
-                        DB.BuiltInParameter.HOST_AREA_COMPUTED
-                        ).AsValueString()
-                        .split(' ')[0]
-                        )
-                print(elem_area, 'must equal')
-
-                data_by_room['Categoria'] = elem_category
-
-                data_by_room['Revestimentos']['Paredes'].append({e.Name: elem_area})
-                for key,value in data_by_room['Revestimentos'].items():
-                    # escritor.writerow([key, [v[0] for v in value]])
-                # for key,value in ...data_by_room['Revestimentos']
+                elem_area = round(float(
+                    e.get_Parameter(DB.BuiltInParameter.HOST_AREA_COMPUTED)
+                    .AsValueString().split(' ')[0]
+                    ), 2)
+#                 # print(elem_area, ' - ', e.Name)
+           
+                # for key,value in ...room_data['Revestimentos']
                 #     escritor.writerow([
-                #         data_by_room['Categoria'],
+                #         room_data['Categoria'],
 
                 #         ])
-                # for item in data_by_room['Revestimentos']['Paredes']:
+                # for item in room_data['Revestimentos']['Paredes']:
                 #     escritor.writerow([item.keys])
                     #gerar csv relatorio
+
+#         # print(type(elem_compound_structure))
+#         # print([[type(layer.LayerId), str(layer.Function)] for layer in elem_layers])
+#         # print(e.get_Parameter(DB.BuiltInParameter.HOST_AREA_COMPUTED).AsValueString())
+#     from pprint import pprint
+#     for k,v in room_data.items():
+#         pprint(v)
+#         escritor.writerow([v])
+# escritor.writerow([finish_category for finish_category in room_data.keys() if finish_category==elem_category])
+    escritor.writerow(
+        room_data['AMBIENTE'], 
+        ['{:.2f}{}'.format(v[0], v[1]) for v in room_data['REVESTIMENTOS'].values()]
+         )
+    # for key, value in room_data['REVESTIMENTOS'].items():
+    #     # Verificando se value é uma lista com dois itens, como esperado
+    #     if isinstance(value, list) and len(value) == 2:
+    #         escritor.writerow(['{} - {}'.format(value[0],value[1])])
 arquivo_csv.close()
-import os
-
 os.startfile(output_path)
-
-        # print(type(elem_compound_structure))
-        
-        
-        # print([[type(layer.LayerId), str(layer.Function)] for layer in elem_layers])
-        # print(e.get_Parameter(DB.BuiltInParameter.HOST_AREA_COMPUTED).AsValueString())
-
 # end of 1st part of filtering process
 # now, "enter" the structure of each intersecting wall/floor/ceiling element
     # check only for Finish2 (or Finish1?) layer functions (ignore the others)
@@ -217,6 +230,5 @@ os.startfile(output_path)
 #                     print('Area total acumulada do revestimento de parede: ', wall_area_count_by_room)
 
 #                 elif elem_category == DB.BuiltInCategory.OST_Floors:
-
 #         except AttributeError:
 #             pass
