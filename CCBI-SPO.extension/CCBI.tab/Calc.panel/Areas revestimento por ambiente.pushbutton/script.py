@@ -5,6 +5,7 @@ import codecs
 import Autodesk.Revit.DB as DB
 clr.AddReference('RevitAPI')
 import os
+import math
 
 from revit_doc_interface import (
     RevitDocInterface,
@@ -50,7 +51,7 @@ selected_rooms_and_names = forms.SelectFromList.show(room_numbers_and_names, but
 selected_room_numbers = [selected.split(" - ")[0] for selected in selected_rooms_and_names] #refers only to the relement's name, for each element selected.
 selected_room_names = [selected.split(" - ")[1] for selected in selected_rooms_and_names]
 
-output_path = 'C:\Users\Hadassa\Documents\UFPE-SPO-CCBI\Relatorios\Areas_rev_ambientes{}.csv'.format(doc.Title)
+output_path = 'C:\Users\Admin\Areas_rev_ambientes{}.csv'.format(doc.Title)
 arquivo_csv = codecs.open(output_path, 'wb', encoding='utf-8')
 escritor = csv.writer(arquivo_csv)
 escritor.writerow(['TABELA DE AREAS DE REVESTIMENTO POR AMBIENTE'])
@@ -127,18 +128,21 @@ for selected_room_number in selected_room_numbers:
        
         for layer in elem_layers:
             if any(str(layer.Function) == v for v in ['Finish1', 'Finish2']):
-                elem_area = round(float(
-                    e.get_Parameter(DB.BuiltInParameter.HOST_AREA_COMPUTED)
-                    .AsValueString().split(' ')[0]
-                    ), 2)
-                room_data['REVESTIMENTOS'][elem_category][0] += elem_area 
-                print(elem_area, ' - ', e.Name)
+                elem_area =  float(e.get_Parameter(DB.BuiltInParameter.HOST_AREA_COMPUTED).AsValueString().split(' ')[0])
+                # print(float(elem_area.split(' ')[0]), ' - ', e.Name, e.Id)
+
+                # elem_area = "{:.1f}".format(elem_area)  # Isso vai garantir que seja arredondado para 1 casa decimal como string
+                # elem_area = math.ceil(elem_area * 10) / 10
+                print(elem_area, ' - ', e.Name, e.Id)
+
+                room_data['REVESTIMENTOS'][elem_category][0] += elem_area
+                # print(valor_ceil, ' - ', e.Name, e.Id)
         # from pprint import pprint
         # for k,v in room_data.items():
         #     pprint(v)
     escritor.writerow(
         [room_data['AMBIENTE']] + 
-        ['{:.2f}{}'.format(v[0], v[1]) for v in room_data['REVESTIMENTOS'].values()])
+        ['{:.2f}'.format(round(v[0],2)) for v in room_data['REVESTIMENTOS'].values()])
     room_data = {
         'AMBIENTE': str,
         'REVESTIMENTOS': {
