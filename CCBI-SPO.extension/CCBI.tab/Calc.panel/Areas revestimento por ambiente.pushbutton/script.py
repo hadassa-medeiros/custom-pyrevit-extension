@@ -104,7 +104,8 @@ for selected_room_number in selected_room_numbers:
         except IndexError:
             pass
 
-    room_area = float(room.get_Parameter(DB.BuiltInParameter.ROOM_AREA).AsValueString()[:4])
+    room_area = room.get_Parameter(DB.BuiltInParameter.ROOM_AREA).AsValueString()[:4]
+    print(room_area)
     room_bounding_box = room.get_BoundingBox(doc.ActiveView)
     room_outline = DB.Outline(room_bounding_box.Min, room_bounding_box.Max)
     # Establishing room limits as filters to elements (A filter used to match elements with a bounding box that intersects the given Outline https://www.revitapidocs.com/2023/1fbe1cff-ed94-4815-564b-05fd9e8f61fe.htm)
