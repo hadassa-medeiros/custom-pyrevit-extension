@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/ADDON.iml" filepath="$PROJECT_DIR$/.idea/ADDON.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/H-UFPE-PYREVIT.extension.iml" filepath="$PROJECT_DIR$/.idea/H-UFPE-PYREVIT.extension.iml" />
     </modules>
   </component>
 </project>

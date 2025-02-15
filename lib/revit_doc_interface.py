@@ -54,7 +54,7 @@ class RevitDocInterface:
     
     @property
     def walls(self):
-        return DB.FilteredElementCollector(self.doc).OfClass(
+        return DB.FilteredElementCollector(self.doc).OfCategory(
             self.category_map["walls"]
         ).WhereElementIsNotElementType().ToElements()
 
@@ -128,6 +128,11 @@ def meter_to_double(value_in_meters):
     meter_to_double_factor = 3.280840
     value_in_double = round(value_in_meters * meter_to_double_factor, 5)
     return value_in_double
+
+def double_to_metric(value):
+    meter_to_double_factor = 3.280840
+    value_in_metric = round(value/meter_to_double_factor, 3)
+    return value_in_metric
 
 def get_room_number(roomElement):
     return roomElement.get_Parameter(DB.BuiltInParameter.ROOM_NUMBER).AsString()

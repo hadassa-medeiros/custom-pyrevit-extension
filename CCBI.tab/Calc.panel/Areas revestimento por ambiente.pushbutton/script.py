@@ -135,11 +135,11 @@ for selected_room_number in selected_room_numbers:
                 # elem_area = math.ceil(elem_area * 10) / 10
                 print(elem_area, ' - ', e.Name, e.Id)
 
-                room_data['REVESTIMENTOS'][elem_category][0] += elem_area
+                # room_data['REVESTIMENTOS'][elem_category][0] += elem_area
                 # print(valor_ceil, ' - ', e.Name, e.Id)
-        # from pprint import pprint
-        # for k,v in room_data.items():
-        #     pprint(v)
+        from pprint import pprint
+        for k,v in room_data.items():
+            pprint(v)
 
     # escritor.writerow(
         # [room_data['AMBIENTE']] + 
