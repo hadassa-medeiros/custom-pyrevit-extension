@@ -51,10 +51,11 @@ selected_room_numbers = [selected.split(" - ")[0] for selected in selected_rooms
 selected_room_names = [selected.split(" - ")[1] for selected in selected_rooms_and_names]
 
 # Make output path dynamic so it works on any machine
-output_path = 'C:\Users\Admin\Areas_rev_ambientes{}.csv'.format(doc.Title)
-# arquivo_csv = codecs.open(output_path, 'wb', encoding='utf-8')
-# escritor = csv.writer(arquivo_csv)
-# escritor.writerow(['TABELA DE AREAS DE REVESTIMENTO POR AMBIENTE'])
+output_path = os.path.join(os.path.expanduser('~'), 'Areas_rev_ambientes{}.csv'.format(doc.Title))
+
+arquivo_csv = codecs.open(output_path, 'wb', encoding='utf-8')
+escritor = csv.writer(arquivo_csv)
+escritor.writerow(['TABELA DE AREAS DE REVESTIMENTO POR AMBIENTE'])
 
 room_data = {
     'AMBIENTE': str,
@@ -137,13 +138,10 @@ for selected_room_number in selected_room_numbers:
 
                 # room_data['REVESTIMENTOS'][elem_category][0] += elem_area
                 # print(valor_ceil, ' - ', e.Name, e.Id)
-        from pprint import pprint
-        for k,v in room_data.items():
-            pprint(v)
 
-    # escritor.writerow(
-        # [room_data['AMBIENTE']] + 
-        # ['{:.2f}'.format(round(v[0],2)) for v in room_data['REVESTIMENTOS'].values()])
+    escritor.writerow(
+        [room_data['AMBIENTE']] + 
+        ['{:.2f}'.format(round(v[0],2)) for v in room_data['REVESTIMENTOS'].values()])
     room_data = {
         'AMBIENTE': str,
         'REVESTIMENTOS': {
@@ -152,8 +150,8 @@ for selected_room_number in selected_room_numbers:
             'FORROS': [.0,' m2']
         }
     }
-# arquivo_csv.close()
-# os.startfile(output_path)
+arquivo_csv.close()
+os.startfile(output_path)
 
 
 # end of 1st part of filtering process
