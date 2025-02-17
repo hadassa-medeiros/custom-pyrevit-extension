@@ -11,42 +11,46 @@ interface = RevitDocInterface()
 
 all_rooms = interface.rooms
 all_walls = interface.walls
+wcs = [
+    room for room in all_rooms 
+    if any(
+        keyword.lower() in get_name(room).strip().lower() for keyword in ['wc']
+        )
+    ]
 
-print("WIP: Desativar delimitação de ambientes para divisórias em WCs") 
+# Percorrer apenas os ambientes WC/WCB/Sanitarios
+for room in wcs:
+    print(room.Id, get_name(room))
+    room_bbox = room.get_BoundingBox(doc.ActiveView)
+    room_as_filter = DB.BoundingBoxIntersectsFilter(DB.Outline(room_bbox.Min, room_bbox.Max)) # Create filter
+    # collect only walls within wcs bounding boxes
+    walls_inside_room = DB.FilteredElementCollector(doc).OfCategory(
+        DB.BuiltInCategory.OST_Walls
+        ).WherePasses(room_as_filter).ToElements()
 
-for wall in all_walls:
-    #get_name not working (returns Sem nome)
-    # name = get_name(wall)
-    name = wall.Name
-    wall_width = double_to_metric(wall.Width)
-    level_id = wall.LevelId
-    
-    # Tenta acessar o parâmetro WALL_ATTR_ROOM_BOUNDING
-    room_bounding_param = wall.get_Parameter(DB.BuiltInParameter.WALL_ATTR_ROOM_BOUNDING)
-    
-    # Condições de modificação do parâmetro (necessario filtrar para funcionar apenas em WCs)
-    if room_bounding_param and 'DIV' in name and wall_width <= 0.04 and room_bounding_param.AsInteger() == 1:        
-        try:
-            print("Desativando Delimitação de ambientes para a parede: {}".format(name))
+    print("WIP: Desativando delimitação de ambientes para divisórias em WCs")
 
-            # Inicia uma transação para alterar o parâmetro
-            t = DB.Transaction(doc, "Switch off room bounding for wall")
-            t.Start()
-            print(
-                "Room Bounding (Before) for Wall ID {}: {}"
-                .format(wall.Id.IntegerValue, room_bounding_param.AsInteger())
-                )
-            room_bounding_param.Set(0)  # Define como 0 (false)
-            print(
-                "Room Bounding (After) for Wall ID {}: {}"
-                .format(wall.Id.IntegerValue, room_bounding_param.AsInteger())
-                )
-            t.Commit()
-
-        except Exception as e:
-            print("Erro ao desativar Delimitação de ambientes para a parede {}: {}".format(name, e))
-            pass
+    for wall in walls_inside_room:
+        name = wall.Name
+        wall_width = double_to_metric(wall.Width)
+        wall_height = double_to_metric(wall.get_Parameter(DB.BuiltInParameter.WALL_USER_HEIGHT_PARAM).AsDouble())
+        # level_id = wall.LevelId
+        room_bounding_param = wall.get_Parameter(DB.BuiltInParameter.WALL_ATTR_ROOM_BOUNDING)
         
-    else:
-        print("{} - ID {} já apresenta Delimitação de ambientes desativada.".format(wall.Name, wall.Id))
+        # Apenas se o nome da parede contiver o termo DIV (indica que se trata de divisoria) e o parâmetro Delimitação de ambientes estiver ativo, desativa-lo
+        if 'DIV'.lower() == name.split("_")[0].lower() and room_bounding_param.AsInteger() == 1:        
+            try:
+                print("Desativando Delimitação de ambientes para a parede: {} - ID {}".format(name, wall.Id))
+
+                # Inicia uma transação para alterar o parâmetro
+                t = DB.Transaction(doc, "Switch off room bounding for wall")
+                t.Start()
+                room_bounding_param.Set(0)  # Define como 0 (false) o parâmetro Delimitação de ambientes    
+                t.Commit()
+
+            except Exception as e:
+                print("Erro ao desativar Delimitação de ambientes para a parede {}: {}".format(name, e))
+                pass
             
+        else:
+            print("{} - ID {} já apresenta divisorias internas com Delimitação de ambientes desativada.".format(get_name(room),(room.Id)))
