@@ -1,27 +1,51 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
 
+def map_cat_to_elements(self, keyword):
+    return DB.FilteredElementCollector(self.doc).OfCategory(
+        self.category_map[keyword]
+    ).WhereElementIsNotElementType().ToElements()
+    
 class RevitDocInterface:
     def __init__(self, RevitDoc=__revit__.ActiveUIDocument.Document):
         self.doc = RevitDoc# self.collector = DB.FilteredElementCollector(RevitDoc)
         self.category_map = {
+            # "all_elements": DB.Element
             "walls": DB.BuiltInCategory.OST_Walls,
             "floors": DB.BuiltInCategory.OST_Floors,
+            "rooms": DB.BuiltInCategory.OST_Rooms,
+            "ceilings": DB.BuiltInCategory.OST_Ceilings,
             "lines": DB.BuiltInCategory.OST_Lines,
             "levels": DB.BuiltInCategory.OST_Levels,
             "walltypes": DB.WallType,
             "curves": DB.CurveElement,
             "room_separation_lines": DB.CurveElementFilter(DB.CurveElementType.RoomSeparation),
+            "materials": DB.BuiltInCategory.OST_Materials,
         }
     # def filter_elements_by_name(elements_list, reference_keywords):
     #     for element in elements_list:
+    @property
+    def rooms(self):
+        return map_cat_to_elements(self, 'rooms')
+
+    @property
+    def floors(self):
+        return map_cat_to_elements(self, 'floors')
     
     @property
-    def levels(self):
-        return DB.FilteredElementCollector(self.doc).OfCategory(
-            self.category_map["levels"]
-        ).WhereElementIsNotElementType().ToElements()
+    def ceilings(self):
+        return map_cat_to_elements(self, 'ceilings')
 
+    @property
+    def levels(self):
+        return list(map_cat_to_elements(self, 'levels'))
+    
+    @property
+    def materials(self):
+        return DB.FilteredElementCollector(self.doc).OfCategory(
+            self.category_map["materials"]
+        ).WhereElementIsNotElementType().ToElements()
+    
     @property
     def walltypes(self):
         return DB.FilteredElementCollector(self.doc).OfClass(
@@ -34,12 +58,6 @@ class RevitDocInterface:
             self.category_map["walls"]
         ).WhereElementIsNotElementType().ToElements()
 
-    @property
-    def floor_elements(self):
-        return DB.FilteredElementCollector(self.doc).OfCategory(
-            self.category_map["floors"]
-        ).WhereElementIsNotElementType().ToElements()
-    
     @property
     def lines(self):
         return DB.FilteredElementCollector(self.doc).OfCategory(
@@ -55,7 +73,7 @@ class RevitDocInterface:
     @property
     def model_lines(self):
         filter = DB.CurveElementFilter(DB.CurveElementType.ModelCurve)
-        return DB.FilteredElementCollector(self.doc).WherePasses(filter).ToElements()
+        return DB.FilteredElementCollector(self.doc).WherePasses(filter).WhereElementIsNotElementType().ToElements()
         
     # def filter_elements_by_name(self, elements_list, reference_keywords):
     #     filter = [DB.FilterStringContains(DB.BuiltInParameter.ALL_MODEL_TYPE_NAME, keyword) for keyword in reference_keywords]
@@ -72,17 +90,31 @@ class RevitDocInterface:
             ]
         return filtered_lines
     
+def find_id_by_element_name(RevitListOfElements, keyword):
+    for element in RevitListOfElements:
+        if get_name(element) == keyword:
+            return element.Id
+
 def get_ids_of(RevitListOfElements):
     elem_ids_list = [element.Id for element in RevitListOfElements]
     return elem_ids_list
 
 def get_name(element):
-    if hasattr(element, 'Name') and element.Name:
-        return element.Name
-    name_param = element.get_Parameter(DB.BuiltInParameter.ALL_MODEL_TYPE_NAME)
-    if name_param and name_param.HasValue:
-        return name_param.AsString()
-    return ""
+    if element is not None:
+        model_type_param = element.get_Parameter(DB.BuiltInParameter.ALL_MODEL_TYPE_NAME)
+        room_name_param = element.get_Parameter(DB.BuiltInParameter.ROOM_NAME)
+        
+        # Obtenha o valor do parâmetro somente se ele não for None
+        model_type_name = model_type_param.AsString() if model_type_param else None
+        room_name = room_name_param.AsString() if room_name_param else None
+
+        if model_type_name is not None:
+            return model_type_name
+        elif room_name is not None:
+            return room_name
+        else:
+            return "Sem nome"  # Nome padrão caso nenhum parâmetro exista
+    return "Elemento inválido"
     
 def get_names(RevitListOfElements):
     elem_names_list = [get_name(element) for element in RevitListOfElements]
@@ -92,36 +124,51 @@ def get_element(RevitListOfElements):
     elements_list = [element for element in RevitListOfElements]
     return elements_list[0]
 
+def meter_to_double(value_in_meters):
+    meter_to_double_factor = 3.280840
+    value_in_double = round(value_in_meters * meter_to_double_factor, 5)
+    return value_in_double
+
+def double_to_metric(value):
+    meter_to_double_factor = 3.280840
+    value_in_metric = round(value/meter_to_double_factor, 3)
+    return value_in_metric
+
+def get_room_number(roomElement):
+    return roomElement.get_Parameter(DB.BuiltInParameter.ROOM_NUMBER).AsString()
+
 class ModelLine:
     # def __init__(self, RevitOBJ: ModelLines):
     def __init__(self, RevitOBJ):
         self.start_point = RevitOBJ.GeometryCurve.GetEndPoint(0)
         self.end_point = RevitOBJ.GeometryCurve.GetEndPoint(1)
         self.style = RevitOBJ.LineStyle.Name
+        self.length = RevitOBJ.GeometryCurve.Length
+        self.sketch_plane = RevitOBJ.SketchPlane.Name
        
     @property
     def start_x(self):
-        return self.start_point.X
+        return round(self.start_point.X, 5)
     
     @property
     def start_y(self):
-        return self.start_point.Y
+        return round(self.start_point.Y, 5)
     
     @property
     def start_z(self):
-        return self.start_point.Z
+        return round(self.start_point.Z, 5)
 
     @property
     def end_x(self):
-        return self.end_point.X
+        return round(self.end_point.X, 5)
 
     @property
     def end_y(self):
-        return self.end_point.Y
+        return round(self.end_point.Y, 5)
     
     @property
     def end_z(self):
-        return self.end_point.Z
+        return round(self.end_point.Z, 5)
     
 if __name__ == "__main__":
     interface = RevitDocInterface()
@@ -164,3 +211,18 @@ if __name__ == "__main__":
 #     if area_param:
 #         total_area = total_area + area_param.AsDouble()
 # print("Total area of walls is {:.2f}".format(total_area))
+
+
+# exemplo de FILTRO tipo ElementParameterFilter:
+# param_value_provider = DB.ParameterValueProvider(elem_id)
+
+# rule_evaluator = DB.FilterStringEquals()
+# rule_str = 'PROJETO'
+
+# f_rule = DB.FilterStringRule(param_value_provider, rule_evaluator, rule_str)
+
+# filter = DB.ElementParameterFilter(f_rule, True)
+
+# filtered_elements = all_walls.WherePasses(
+#     filter
+#     ).WhereElementIsNotElementType().ToElements()

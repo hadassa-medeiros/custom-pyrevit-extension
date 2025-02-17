@@ -21,7 +21,7 @@ def join_geometry(doc, elements):
             # Itera sobre todos os objetos geométricos do elemento
             for geometry_object in element_geometry:
                 if isinstance(geometry_object, DB.Solid) and geometry_object.Volume > 0:
-                    for floor in interface.floor_elements:
+                    for floor in interface.floors:
                         floor_geometry = floor.get_Geometry(DB.Options())
                         
                         for floor_geometry_object in floor_geometry:

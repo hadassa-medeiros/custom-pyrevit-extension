@@ -26,7 +26,6 @@ interface = RevitDocInterface()
 __title__     = "Areas Revestimentos"
 __author__    = "Hadassa Medeiros"
 
-
 # Definir categorias relevantes e criar filtro
 relevant_categories = [
     DB.ElementCategoryFilter(cat) for cat in [
@@ -51,7 +50,9 @@ selected_rooms_and_names = forms.SelectFromList.show(room_numbers_and_names, but
 selected_room_numbers = [selected.split(" - ")[0] for selected in selected_rooms_and_names] #refers only to the relement's name, for each element selected.
 selected_room_names = [selected.split(" - ")[1] for selected in selected_rooms_and_names]
 
-output_path = 'C:\Users\Admin\Areas_rev_ambientes{}.csv'.format(doc.Title)
+# Make output path dynamic so it works on any machine
+output_path = os.path.join(os.path.expanduser('~'), 'Areas_rev_ambientes{}.csv'.format(doc.Title))
+
 arquivo_csv = codecs.open(output_path, 'wb', encoding='utf-8')
 escritor = csv.writer(arquivo_csv)
 escritor.writerow(['TABELA DE AREAS DE REVESTIMENTO POR AMBIENTE'])
@@ -65,8 +66,8 @@ room_data = {
     }
 }
 
-escritor.writerow([key for key in room_data.keys()])
-escritor.writerow([''] + [key for key in room_data['REVESTIMENTOS'].keys()])
+# escritor.writerow([key for key in room_data.keys()])
+# escritor.writerow([''] + [key for key in room_data['REVESTIMENTOS'].keys()])
 
 for selected_room_number in selected_room_numbers:
     selected_room_element = next(room for room in interface.rooms if
@@ -136,11 +137,9 @@ for selected_room_number in selected_room_numbers:
                 # elem_area = math.ceil(elem_area * 10) / 10
                 print(elem_area, ' - ', e.Name, e.Id)
 
-                room_data['REVESTIMENTOS'][elem_category][0] += elem_area
+                # room_data['REVESTIMENTOS'][elem_category][0] += elem_area
                 # print(valor_ceil, ' - ', e.Name, e.Id)
-        # from pprint import pprint
-        # for k,v in room_data.items():
-        #     pprint(v)
+
     escritor.writerow(
         [room_data['AMBIENTE']] + 
         ['{:.2f}'.format(round(v[0],2)) for v in room_data['REVESTIMENTOS'].values()])
@@ -154,6 +153,8 @@ for selected_room_number in selected_room_numbers:
     }
 arquivo_csv.close()
 os.startfile(output_path)
+
+
 # end of 1st part of filtering process
 # now, "enter" the structure of each intersecting wall/floor/ceiling element
     # check only for Finish2 (or Finish1?) layer functions (ignore the others)
