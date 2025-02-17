@@ -1,5 +1,19 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
+import unicodedata
+
+def remove_acentos(texto):
+    # Normaliza o texto e remove os acentos
+    nfkd_form = unicodedata.normalize('NFKD', texto)
+    return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+def capitalize_string(texto):
+    # Capitaliza cada palavra da string
+    return texto.strip().title()
+
+
+def get_selected_elements(uidoc):
+    return [uidoc.Document.GetElement(elem_id) for elem_id in uidoc.Selection.GetElementIds()] 
 
 def map_cat_to_elements(self, keyword):
     return DB.FilteredElementCollector(self.doc).OfCategory(
@@ -108,12 +122,17 @@ def get_name(element):
         model_type_name = model_type_param.AsString() if model_type_param else None
         room_name = room_name_param.AsString() if room_name_param else None
 
+        # Prioriza o nome do tipo de modelo
         if model_type_name is not None:
-            return model_type_name
+            name = model_type_name
         elif room_name is not None:
-            return room_name
+            name = room_name
         else:
-            return "Sem nome"  # Nome padrão caso nenhum parâmetro exista
+            name = "Sem nome"  # Nome padrão caso nenhum parâmetro exista
+        
+        # Remove acentos e caracteres especiais, depois capitaliza
+        return capitalize_string(remove_acentos(name))
+    
     return "Elemento inválido"
     
 def get_names(RevitListOfElements):

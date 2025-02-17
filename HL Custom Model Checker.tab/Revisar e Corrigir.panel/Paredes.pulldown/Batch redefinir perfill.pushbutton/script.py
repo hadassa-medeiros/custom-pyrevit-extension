@@ -8,19 +8,16 @@ so the model is more consistent with the standards and the model review process 
 '''
 import clr
 import Autodesk.Revit.DB as DB
+from revit_doc_interface import get_selected_elements
 clr.AddReference('RevitAPI')
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 
-def get_selected_elements(uidoc):
-    return [uidoc.Document.GetElement(elem_id) for elem_id in uidoc.Selection.GetElementIds()] 
-
 for selected in get_selected_elements(uidoc):
     #if SketchId is not -1, then it is has been modified and must be reset if created to account for door/window openings
      # open a transaction to make it be -1
-
-    if selected.SketchId != -1:
+    if selected.SketchId and selected.SketchId != -1:
         print(selected.Name)
         try:
             t = DB.Transaction(doc, "Reset SketchId")
