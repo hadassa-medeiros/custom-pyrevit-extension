@@ -9,7 +9,7 @@ doc = __revit__.ActiveUIDocument.Document
 
 __title__     = "Eliminar deslocamento da base"
 __author__    = "Hadassa Medeiros"
-__doc__       = ""
+__doc__       = "Elimina o deslocamento da base de todos os pisos do projeto cujo valor de deslocamento seja diferente do padrao (0.00)"
 
 interface = RevitDocInterface()
 
@@ -26,6 +26,8 @@ def remove_base_offset():
                 print("Error: {}".format(e))
                 pass
             t.Commit()  
+
+
 
 def correct_wall_top_constraint():
     for wall in interface.walls:
@@ -49,5 +51,19 @@ def correct_wall_top_constraint():
                         print("Error: {}".format(e))
                         pass
                     t.Commit()
+            #   # if there is no level with the sufix -ossatura, create one below the current level by 2cm
+
+                # else:
+                #     t = DB.Transaction(doc, "Criar nível de topo da parede")
+                #     t.Start()
+                #     try:
+                #         level = DB.Level.Create(doc, constraint_level.Elevation - 0.02)
+                #         level.Name = constraint_level.Name + '-ossatura'
+                #         wall.get_Parameter(DB.BuiltInParameter.WALL_HEIGHT_TYPE).Set(level.Id)
+                #         print("Nível de topo da parede {} - {} corrigido de {} para nivel recem-criado {}".format(wall.Name, wall.Id, constraint_level.Name, level.Name))
+                #     except Exception as e:
+                #         print("Error: {}".format(e))
+                #         pass
+                    
 correct_wall_top_constraint()
 
