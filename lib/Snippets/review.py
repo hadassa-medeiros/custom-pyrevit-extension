@@ -32,7 +32,7 @@ def correct_elem_phase(elem, target_phase_created_id):
         param.Set(target_phase_created_id)  # Define a altura (em metros)
         print(
             "Fase da elemento ID {} corrigida de {} para {}"
-              .format(element.Id, incorrect_phase_created, target_phase_created_id)
+              .format(elem.Id, incorrect_phase_created, target_phase_created_id)
               )
     except Exception as e:
         print("Error: {}".format(e))

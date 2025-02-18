@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
 import unicodedata
+from pyrevit import forms
+
+uidoc = __revit__.ActiveUIDocument
+doc = __revit__.ActiveUIDocument.Document
+
+def pick_csv_file():
+    return forms.pick_file(file_ext='csv', multi_file=False)
 
 def remove_acentos(texto):
     # Normaliza o texto e remove os acentos
@@ -21,7 +28,7 @@ def map_cat_to_elements(self, keyword):
     ).WhereElementIsNotElementType().ToElements()
     
 class RevitDocInterface:
-    def __init__(self, RevitDoc=__revit__.ActiveUIDocument.Document):
+    def __init__(self, RevitDoc=doc):
         self.doc = RevitDoc# self.collector = DB.FilteredElementCollector(RevitDoc)
         self.category_map = {
             # "all_elements": DB.Element
@@ -150,8 +157,8 @@ def meter_to_double(value_in_meters):
 
 def double_to_metric(value):
     meter_to_double_factor = 3.280840
-    value_in_metric = round(value/meter_to_double_factor, 3)
-    return value_in_metric
+    value_in_metric = value/meter_to_double_factor
+    return round(value_in_metric, 2)
 
 def get_room_number(roomElement):
     return roomElement.get_Parameter(DB.BuiltInParameter.ROOM_NUMBER).AsString()
