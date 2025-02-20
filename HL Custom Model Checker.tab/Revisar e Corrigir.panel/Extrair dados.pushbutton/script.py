@@ -4,23 +4,23 @@ import json
 import os
 import codecs  # 🔥 Import necessário para compatibilidade com IronPython
 from Autodesk.Revit.UI import TaskDialog
-from revit_doc_interface import remove_acentos
+from revit_doc_interface import (remove_acentos, get_project_parameter, normalize_param)
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 
+# model_version = DB.BasicFileInfo.GetDocumentVersion(doc)
+# model_path = DB.BasicFileInfo.CentralPath
+
 # 🔎 Obtém todas as salas no modelo
 rooms = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Rooms).WhereElementIsNotElementType().ToElements()
 room_data = []
+    
+cod_inventory = get_project_parameter(doc, 'CODIGO INVENTARIO CCBI', False)
+# campus_or_center = get_project_parameter(doc, 'NOME CAMPUS/CENTRO', False)
 
-def normalize_param(param_obj):
-    return param_obj.AsString() if param_obj and param_obj.HasValue else None
-
-project_info_elem = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_ProjectInformation).FirstElement()
-campus_or_center = normalize_param(project_info_elem.LookupParameter('NOME CAMPUS/CENTRO'))
-project_info = DB.FilteredElementCollector(doc).OfClass(DB.ProjectInfo).FirstElement()
-params = [param.Definition.Name for param in project_info.Parameters]
-print(params)
+# params = [param.Definition.Name for param in project_info.Parameters]
+# print(params)
 
 for room in rooms:
     # Obtém parâmetros e verifica se têm valor antes de acessá-los
@@ -47,7 +47,6 @@ for room in rooms:
             "nome": room_name,
             "area": area_m2,
             "departamento": department,
-            "campus/centro": campus_or_center,
             "revestimentos": {
                     "piso": floor_finish,
                     "parede": wall_finish,
@@ -65,9 +64,12 @@ for room in rooms:
 # 🔎 Estrutura do JSON final
 building_data = {
     "nome_arquivo": doc.Title,
-    "salas": room_data,
-    "ultima_revisao": "2025-02-11",
-    "arquivo_rvt": "https://drive.google.com/seu_arquivo_rvt"
+    "codigo inventario": cod_inventory,
+    # "campus/centro": campus_or_center,
+    "ambientes": room_data,
+    # "area util": ,
+    # "area construida": ,
+    # "ultima_revisao": "2025-02-11"
 }
 
 # 📂 Define o caminho de saída

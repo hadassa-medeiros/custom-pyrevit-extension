@@ -7,6 +7,25 @@ uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 app = doc.Application
 
+
+# about parameters:
+def normalize_param(param_obj):
+    return param_obj.AsString() if param_obj and param_obj.HasValue else None
+
+def get_project_parameter(doc, param_name_or_obj, param_is_builtin = bool):
+    project_info_elem = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_ProjectInformation).FirstElement()
+    campus_or_center = normalize_param(project_info_elem.LookupParameter('NOME CAMPUS/CENTRO'))
+    project_info = DB.FilteredElementCollector(doc).OfClass(DB.ProjectInfo).FirstElement()
+    try:
+        if param_is_builtin:
+            param_obj = param_name_or_obj
+            return project_info.get_Parameter(param_obj).AsValueString()
+        else:
+            param_name = param_name_or_obj
+            return project_info.LookupParameter(param_name).AsValueString()
+    except AttributeError:
+        print('O parametro informado nao foi encontrado no modelo')
+        
 # open shared parameters file if existent
 sp_file = app.OpenSharedParameterFile()
 
@@ -18,6 +37,7 @@ for group in sp_file.Groups:
     for p_def in group.Definitions:
         combined_name = '{}_{}'.format(group.Name, p_def.Name)
         dict_shared_params[combined_name] = p_def
+
 
 # pick csv trough forms (to be used in pushbutton to compare data from table to data from model)
 def pick_csv_file():
