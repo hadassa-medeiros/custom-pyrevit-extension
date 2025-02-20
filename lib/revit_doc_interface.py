@@ -1,11 +1,28 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
 import unicodedata
-from pyrevit import forms
+from pyrevit import revit, forms
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
+app = doc.Application
 
+# open shared parameters file if existent
+sp_file = app.OpenSharedParameterFile()
+print(sp_file)
+
+if not sp_file:
+    forms.alert('Shared parameters file was not found, add it and try again.')
+
+dict_shared_params = {}
+for group in sp_file.Groups:
+    for p_def in group.Definitions:
+        combined_name = '{}_{}'.format(group.Name, p_def.Name)
+        dict_shared_params[combined_name] = p_def
+print(dict_shared_params)
+
+
+# pick csv trough forms (to be used in pushbutton to compare data from table to data from model)
 def pick_csv_file():
     return forms.pick_file(file_ext='csv', multi_file=False)
 

@@ -28,7 +28,6 @@ def remove_base_offset():
             t.Commit()  
 
 
-
 def correct_wall_top_constraint():
     for wall in interface.walls:
         top_constraint = wall.get_Parameter(DB.BuiltInParameter.WALL_HEIGHT_TYPE).AsElementId()
