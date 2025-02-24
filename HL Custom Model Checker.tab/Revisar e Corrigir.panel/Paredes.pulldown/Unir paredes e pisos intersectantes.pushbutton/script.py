@@ -23,6 +23,7 @@ doc = __revit__.ActiveUIDocument.Document
 
 # find_out_categories_with_solids()
 
+
 # pedir para que o usuario selecione categorias cujos elementos intersectantes devem ser unidos
 category_names_and_elements = {
     DB.BuiltInCategory.OST_Walls: interface.walls,
@@ -73,8 +74,6 @@ def join_geometry(doc, category_A, category_B):
                                     DB.BooleanOperationsType.Intersect
                                     )
                                 if intersection and intersection.Volume > 0:
-                                    print(intersection.Volume)
-
                                     try:
                                         DB.JoinGeometryUtils.JoinGeometry(doc, elem_A, elem_B)
                                         print("Elementos unidos: {} (ID {}) + {} (ID {})".format(elem_A.Name, elem_A.Id, elem_B.Name, elem_B.Id))
