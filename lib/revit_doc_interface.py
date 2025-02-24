@@ -52,7 +52,6 @@ def capitalize_string(texto):
     # Capitaliza cada palavra da string
     return texto.strip().title()
 
-
 def get_selected_elements(uidoc):
     return [uidoc.Document.GetElement(elem_id) for elem_id in uidoc.Selection.GetElementIds()] 
 
@@ -76,9 +75,25 @@ class RevitDocInterface:
             "curves": DB.CurveElement,
             "room_separation_lines": DB.CurveElementFilter(DB.CurveElementType.RoomSeparation),
             "materials": DB.BuiltInCategory.OST_Materials,
+            "structural_columns": DB.BuiltInCategory.OST_StructuralColumns,
+            "structural_framing": DB.BuiltInCategory.OST_StructuralFraming,
+            "columns": DB.BuiltInCategory.OST_Columns
+
         }
     # def filter_elements_by_name(elements_list, reference_keywords):
     #     for element in elements_list:
+    @property
+    def columns(self):
+        return map_cat_to_elements(self, 'columns')
+
+    @property
+    def beams(self):
+        return map_cat_to_elements(self, 'structural_framing')
+
+    @property
+    def struct_columns(self):
+        return map_cat_to_elements(self, 'structural_columns')
+
     @property
     def rooms(self):
         return map_cat_to_elements(self, 'rooms')

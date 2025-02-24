@@ -19,25 +19,25 @@ doc = __revit__.ActiveUIDocument.Document
 # model_version = DB.BasicFileInfo.GetDocumentVersion(doc)
 # model_path = DB.BasicFileInfo.CentralPath
 
-uso_ccbi = [
-    {"ADMINISTRACAO": []}, 
-    "APOIO LABORATORIOS",
-    "AUDITORIO",
-    "BIBLIOTECA",
-    "BIOTERIO",
-    "CANTINA",
-    "CIRCULACAO",
-    "CONSULTORIO",
-    "COPA",
-    "GABINETE PROFESSOR",
-    "INFORMATICA",
-    "LABORATORIOS",
-    "OUTROS",
-    "POCO",
-    "SALA DE AULA",
-    "SERVICOS",
-    "WC"
-]
+uso_ccbi = {
+    "ADMINISTRACAO": [], 
+    "APOIO LABORATORIOS": [],
+    "AUDITORIO": ,
+    "BIBLIOTECA": ,
+    "BIOTERIO": ,
+    "CANTINA": ,
+    "CIRCULACAO": ,
+    "CONSULTORIO": ,
+    "COPA": ,
+    "GABINETE PROFESSOR: ",
+    "INFORMATICA": ,
+    "LABORATORIOS": ,
+    "OUTROS": ,
+    "POCO": ,
+    "SALA DE AULA": ,
+    "SERVICOS": ,
+    "WC: "
+}
 
 usos_spiunet = {
     "AREA DE ESCRITORIO": {
@@ -70,11 +70,11 @@ usos_spiunet = {
         "salas de motoristas",
         "espacos multiuso",
         "espacos de convivência",
-        "refeitorios",
-        "salas de arquivos correntes",
-        "estacoes de autoatendimento",
+        "refeitorio",
+        "sala de arquivos corrente",
+        "autoatendimento",
         "reprografia", 
-        "depositos voltado a vontade administrativa", 
+        "deposito voltado a vontade administrativa", 
         "manutencao predial"
     ],
     "AREA TECNICA": [
@@ -97,7 +97,8 @@ usos_spiunet = {
         "gerador",
         "quadro tecnico",
         "cofre",
-        "garagem"
+        "garagem",
+        "rede"
     ],
     "AREA ESPECIFICA": [
         "aula",
