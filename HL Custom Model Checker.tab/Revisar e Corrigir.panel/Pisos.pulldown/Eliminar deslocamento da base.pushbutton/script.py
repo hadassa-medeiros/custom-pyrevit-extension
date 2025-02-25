@@ -65,26 +65,3 @@ def correct_wall_top_constraint():
                 #         pass
                     
 correct_wall_top_constraint()
-
-'''
-walls are used in layering systems, where each layer has a specific function and material
-one core wall element represents the core/nucleus of the wall, plus the substract or pre-finishing layers
-
-walltype names must be
-    composed by 3 parts: prefix["REV_", ALV_, "" + "wall name" + "wall.width in cm", all upper case except for the wall name(capitalized, no special characters)
-REV_s:
-    1. have their compound strucutre composed by only one layer
-    2. this layer must have its function (layer.Function) set to "Finish2"
-    3. this layer must not have its material (layer.Material) empty (None or <By Category> or <Por Categoria>)
-
-    if wall name prefix is anything other than standard
-    correct it to the standard based on the unique characteristics of the walltype
-GENERICA_xCM
-ALV_s:
-    1. have their core layer with function "Structure"
-    2. have their core layer with structural materials, such as "Concrete" or "Masonry" (concreto ou alvenaria)
-    3. have their compound structure's total thickness (equivalent to wall.Width) of x cm (need conversion from double to m to cm)
-    4. have their surface (most externcal and most internal) layers 
-        with function "Substrate" or "Finish1", but never "Finish2" or "Structure"
-    
-    '''

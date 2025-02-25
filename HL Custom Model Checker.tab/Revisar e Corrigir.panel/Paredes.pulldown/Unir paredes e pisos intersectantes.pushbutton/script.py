@@ -47,7 +47,6 @@ selected_category_B = forms.CommandSwitchWindow.show(
 )
 
 def join_geometry(doc, category_A, category_B):
-    # Inicia uma única transação para todas as alterações
     elements_A = category_names_and_elements[category_A]
     elements_B = category_names_and_elements[category_B]
 
