@@ -2,9 +2,11 @@
 import Autodesk.Revit.DB as DB
 from revit_doc_interface import (RevitDocInterface, get_name)
 from pyrevit import forms
+from Snippets.review import phase_created_is
 
 
-
+# 🔴 Todos os elementos modelados devem pertencer à fase Levantamento
+phase_created_is('LEVANTAMENTO')
 
 """
 As categorias principais do modelo existem? (ex.: paredes, esquadrias)
@@ -26,7 +28,6 @@ da edificcao/projeto x 2(pois para cada piso acabado ha um nivel _ossatura),
 + 2 (Rua e Coberta)
 🔴 O modelo deve conter apenas elementos essenciais (sem famílias, materiais, tipos, níveis ou vistas desnecessários)
 
-🔴 Todos os elementos modelados devem pertencer à fase Levantamento
 🔴 Os eixos de peças sanitárias devem estar corretamente posicionados e bloqueados 
 (adicionar cota de bloqueio a partir da parede REV face mais proxima e paralela ao eixo da peca sanitaria)
 🔴Os limites de ambientes devem estar corretos
@@ -117,6 +118,69 @@ observados em edificacoes com modelos ja concluidos)
 ✅ As cotas auxiliares (AUX 3mm) devem estar configuradas corretamente e invisíveis em vistas para impressão
 ✅ Todos os elementos e pavimentos devem estar configurados de forma consistente para futuras atualizações
 
+
+
+
+
+
+## Checklist de Verificação de Modelos BIM
+
+### ⛔ Erros Críticos (Check Inicial – 15 min)
+- O modelo deve abrir sem erros e carregar corretamente.
+- As categorias principais do modelo devem existir (ex.: paredes, esquadrias, circulação).
+- Os arquivos vinculados devem carregar corretamente.
+- Não deve haver elementos obviamente quebrados ou faltando.
+- A quantidade de níveis deve seguir a fórmula:
+  - **Qtde de pavimentos da edificação/projeto × 2** (pois cada piso acabado tem um nível "ossatura")
+  - **+2** (níveis extras: Rua e Coberta)
+- O modelo deve conter apenas elementos essenciais (sem famílias, materiais, tipos, níveis ou vistas desnecessários).
+- Todos os elementos modelados devem pertencer à fase **Levantamento**.
+- Os eixos de peças sanitárias devem estar corretamente posicionados e bloqueados:
+  - Adicionar cota de bloqueio a partir da parede **REV_** face mais próxima e paralela ao eixo da peça sanitária.
+- Os limites de ambientes devem estar corretos:
+  1. Não devem incluir áreas de pilares/colunas ou paredes.
+  2. Devem abranger toda a área interna delimitada pelas paredes respectivas.
+  3. Dentro de banheiros (WCs), as divisórias entre cabines individuais devem ter o parâmetro **Delimitação de Ambientes** desativado.
+
+### 🟡 Estrutura Geral (BIM & Normas – 30 min)
+- Os níveis do projeto devem estar configurados corretamente (Térreo, Coberta e intermediários conforme necessário).
+- As bases de todas as paredes e pisos estruturais (EST) devem estar associadas ao nível de ossatura correspondente.
+- O modelo deve conter apenas os níveis necessários para a edificação, sem excedentes não utilizados.
+- As cotas gerais e parciais devem ser inseridas para garantir estabilidade das medidas ao longo do processo.
+- Os ambientes devem estar **nomeados (capitalizados) e numerados** conforme a referência DWG mais atual.
+- As categorias de elementos devem estar corretas (**portas são portas, paredes são paredes, mobiliário é mobiliário, etc.**).
+- O modelo deve estar alinhado com a base DWG.
+- As esquadrias devem estar conforme a **tabela CSV exportada** a partir do modelo DWG da edificação. Na ausência de tabela, a referência será a representação bidimensional em plantas baixas e elevações.
+- Devem existir os seguintes **Parâmetros Compartilhados**:
+  - Associados a Ambientes: **‘USO SPIUNET CLASSIFICACAO’, ‘USO CLASSIFICACAO’, ‘Revestimento Parede’, ‘Piso’ e ‘Forro’.**
+- Devem existir os seguintes **Parâmetros de Projeto**:
+  - **‘CAMPUS’, ‘CENTRO ACADÊMICO’.**
+- As paredes estruturais e de revestimento (no sistema "paredes cebola") devem seguir:
+  1. Bases associadas ao nível **ossatura** correspondente ao pavimento.
+  2. Topos conectados ao nível **ossatura** do pavimento imediatamente superior (**ex.: 1º pavimento no DWG → Térreo-Ossatura no modelo**).
+
+### ⚠ Validação de Paredes
+- As paredes devem ser corretamente classificadas entre **Estruturais (ALV_)** e **Revestimentos (REV_)**.
+- Nomes dos tipos de parede devem seguir o padrão:  
+  - Prefixo: **REV_, ALV_, ou vazio.**
+  - Nome: **descritivo da parede.**
+  - Largura: **em cm.**
+  - Exemplo: `REV_GESSO_1CM`.
+- **REV_**:
+  1. Devem ter apenas **uma camada** na estrutura composta.
+  2. Essa camada deve:
+     - Ter a função definida como **"Finish2"**.
+     - Ter um material definido (**não pode ser "None", "<By Category>", ou "<Por Categoria>").**
+     - Ter largura **entre 0.002m e 0.01m**.
+- **ALV_**:
+  1. Devem ter a camada **principal com função "Structure"**.
+  2. Essa camada deve ter materiais estruturais (**ex.: Concreto ou Alvenaria**).
+  3. A largura total da parede (wall.Width) deve ser convertida para **cm** e incluída no nome.
+  4. As camadas **mais externa e interna** devem ter função **Substrate ou Finish1**, mas nunca **Finish2 ou Structure**.
+
+---
+
+Este checklist agora está mais estruturado e pronto para ser transformado em um código de verificação automática! 🚀
 
 
 
