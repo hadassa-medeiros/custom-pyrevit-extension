@@ -45,7 +45,6 @@ def phase_created_is(target_phase_created_name):
     elements_in_incorrect_phase = []
 
     for elem in filter_elements_which_have_phase_created_parameter():
-        # phase_created_param = DB.BuiltInParameter.PHASE_CREATED
         phase_created = elem.get_Parameter(DB.BuiltInParameter.PHASE_CREATED)
         phase_created_name = phase_created.AsValueString() if phase_created else None
         phase_demolished = elem.get_Parameter(DB.BuiltInParameter.PHASE_DEMOLISHED)
@@ -54,15 +53,16 @@ def phase_created_is(target_phase_created_name):
         # print(
         #     "Elemento {} | ID {} | Fase Criada: {} | Fase Demolida: {}".format(elem.Name, elem.Id, created_phase_name, demolished_phase_name)
         # )
-
-        # correct_parameter_value(elem, phase_created_param, target_phase_created_id)
+       
         if phase_created_name != target_phase_created_name:
+            correct_elem_phase(elem, phase_created, target_phase_created_id)
+
             elements_in_incorrect_phase.append(elem)
 
             print('{} - {} - Fase {}'.format(
                 elem.Name, 
                 elem.Category.Name, 
-                phase_created_name
+                phase_created.AsValueString()
             ))
             
             # inserir botao de confirmacao para corrigir o modelo ou nao
