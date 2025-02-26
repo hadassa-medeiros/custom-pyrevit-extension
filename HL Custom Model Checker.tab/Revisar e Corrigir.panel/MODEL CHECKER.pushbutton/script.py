@@ -123,24 +123,62 @@ try:
 except AssertionError:
   print("Eixos ausentes do projeto")
 
-def walls_have_zero_base_offset():
-  walls_with_base_offset = []
-  for wall in interface.walls:
-    
-    wall_base_offset = wall.get_Parameter(DB.BuiltInParameter.WALL_BASE_OFFSET)
+def set_new_value(transaction_description, param_on_change, new_value):
+  t = DB.Transaction(doc, '{}'.format(transaction_description))
+  t.Start()
+  try:
+    param_on_change.Set(new_value)
+    print('Corrigido', param_on_change.AsValueString())
+  except Exception as e:
+    print(e)
+  t.Commit()
 
-    if wall_base_offset.AsValueString() != '0.00':
+def confirm_before_batch_correct(param_on_change, elem_list, new_value):
+      confirm_correction_dialog = forms.CommandSwitchWindow.show(['SIM', 'NAO'], message='Corrigir as incorrecoes encontradas?')
+      if confirm_correction_dialog == 'SIM':
+        for elem in elem_list:
+          set_new_value('modify value of walls\'s Base Offset parameter', 
+                        elem.get_Parameter(param_on_change),
+                        new_value
+          )     
+      else:
+        pass
+
+def all_walls_have_zero_base_offset(target_param_obj, target_elements, default_value):
+  target_category_name = target_elements[0].Category.Name if target_elements else "Desconhecido"
+  # The correct value for the parameter
+  print(
+    'O parametro {} de {} deve ser igual a {}'.format(
+      target_param_obj, 
+      target_category_name, 
+      default_value
+    )
+  )
+
+  incorrect_elements = []
+
+  for elem in target_elements:
+    elem_target_param = elem.get_Parameter(target_param_obj)
+    elem_target_param_normalized = abs(float(elem_target_param.AsValueString()))
+    if elem_target_param_normalized <= 0.15 and elem_target_param_normalized > 0:
       print(
-          '{} - {} tem deslocamento da base igual a {} (deveria ser 0)'.format(
-            wall.Name, 
-            wall.get_Parameter(DB.BuiltInParameter.ALL_MODEL_TYPE_NAME).AsValueString(), 
-            wall_base_offset.AsValueString()
+          '{} - {} tem deslocamento da base igual a {}'.format(
+            elem.Name, 
+            elem.get_Parameter(DB.BuiltInParameter.ALL_MODEL_TYPE_NAME).AsValueString(), 
+            elem_target_param.AsValueString()
             )
         )
-      walls_with_base_offset.append(wall)
-    # if attachment_bottom:
-    #   print(attachment_bottom)
+      incorrect_elements.append(elem)
+  print(len(incorrect_elements))
 
+  if len(incorrect_elements) != 0:
+    confirm_before_batch_correct(
+      target_param_obj, 
+      incorrect_elements,
+      default_value
+    )
+
+all_walls_have_zero_base_offset(DB.BuiltInParameter.WALL_BASE_OFFSET, interface.walls, 0)
 
 def walls_have_base_constrained_to_structural_level():
   incorrect_elements = []
@@ -155,19 +193,17 @@ def walls_have_base_constrained_to_structural_level():
       ).AsInteger() == 0:
         # print(wall)
         incorrect_elements.append(wall)
-      
   # if len(incorrect_elements) > 0:
   #   call_to_model_correction = '{}'.format(len(incorrect_elements))
   #   print(call_to_model_correction)
   return len(incorrect_elements) == 0
 
+try:
+  assert walls_have_base_constrained_to_structural_level()
 
-# try:
-#   assert walls_have_base_constrained_to_structural_level()
-#   assert walls_have_zero_base_offset()
+except AssertionError:
+  print('Ha paredes cuja base esta associada a niveis de piso acabado (deve ser nivel _ossatura)')
 
-# except AssertionError:
-#   print('Ha paredes cuja base esta associada a niveis de piso acabado (deve ser nivel _ossatura)')
 
 def conferir_janelas():
   incorrect_windows = []
@@ -199,7 +235,6 @@ conferir_janelas()
 
 def conferir_paredes_tipo_revestimento():
   incorrect_elements = []
-
     # REV_s:
     # 1. have their compound structre composed by only one layer
 #   below, WIP a dedicated fuction to find this out
@@ -241,14 +276,6 @@ def conferir_paredes_tipo_revestimento():
     # 3 - optionally correct ir right away and infomr user
     return False
 
-try: 
-  assert conferir_paredes_tipo_revestimento()
-except AssertionError:
-  # custom message related to the specific assertion
-  # msg = 
-  print('Assertion error')
-
-
 def conferir_paredes_estrutura():
       # ALV_ or ... in Name must be True
       # ALV_s:
@@ -260,8 +287,72 @@ def conferir_paredes_estrutura():
     return False
 
 
+def column_tops_are_attached():
+  # levels
+  # floors and their compound structure
+  # checar se o pilar no nivel x ta anexado e 2- a quem. se nao ta, anexar a laje struct 
+  for struct_column in interface.struct_columns:
+    is_attached_param = struct_column.get_Parameter(DB.BuiltInParameter.COLUMN_TOP_ATTACHED_PARAM)
+    print(struct_column.Id, type(struct_column), struct_column.Name, is_attached_param.AsInteger())
+    # try:
+
+    # except Exception as e:
+    #   print(e)
+
+  # for column in interface.columns:
+  #   is_attached_param = column.get_Parameter(DB.BuiltInParameter.COLUMN_TOP_ATTACHED_PARAM)
+  #   # print(column.Id, get_name(column), is_attached_param.AsInteger())
+  #   print(column.GetCuttingSolids())
+column_tops_are_attached()
 
 
+
+# 🔴 lajes (elementos de piso que NAO sejam 
+# tipo revestimento/nomeados 'REV_'/com uma unica camada com funcao FInish2  devem ser estruturais
+def lajes_sao_estruturais():
+    floortypes_collection = DB.FilteredElementCollector(doc) \
+        .OfCategory(DB.BuiltInCategory.OST_Floors) \
+        .WhereElementIsElementType() \
+        .ToElements()
+
+    for floortype in floortypes_collection:
+        compound_structure = floortype.GetCompoundStructure()
+        floortype_name = get_name(floortype).upper()
+        
+        # Verifica se o tipo de laje tem camada estrutural OU tem "EST" no nome
+        is_structural_type = (
+            compound_structure 
+            and any(layer.Function == DB.MaterialFunctionAssignment.Structure for layer in compound_structure.GetLayers())
+        ) or "EST" in floortype_name and 'REV' not in floortype_name or 'FUNDACAO' in floortype_name
+
+        if is_structural_type:
+            print("Tipo de laje estrutural: {}".format(floortype_name))
+
+            # Busca todas as instâncias desse tipo
+            lajes_instancias = [
+                laje for laje in DB.FilteredElementCollector(doc) 
+                .OfCategory(DB.BuiltInCategory.OST_Floors) 
+                .WhereElementIsNotElementType()
+                .ToElements() 
+                if laje.GetTypeId() == floortype.Id
+            ]
+            for laje in lajes_instancias:
+              # Verifica se as instâncias têm o parâmetro estrutural ativado
+              is_structural = laje.get_Parameter(DB.BuiltInParameter.FLOOR_PARAM_IS_STRUCTURAL).AsInteger() == 1
+              if is_structural:
+                print(laje.Name)
+
+lajes_sao_estruturais()
+
+# se altura desloc do nivel de piso for entre < 0.03m > 0.00, me avise e de um pouco de contexto. pergunte se quero corrigir ou nao
+# def conferir_pisos():
+#   floors = interface.floors
+#   floor_base_offset
+
+
+    # wall_layers = walltype.GetCompoundStructure().GetLayers() if walltype else ''
+#     # print(get_name(walltype))
+#     if 'REV' in get_name(walltype).upper() and len(wall_layers) == 1:
 """
 As categorias principais do modelo existem? (ex.: paredes, esquadrias)
 dwgs devem estar presentes como vinculos CAD (e nao como imports)

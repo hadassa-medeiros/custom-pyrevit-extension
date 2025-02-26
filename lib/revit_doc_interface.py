@@ -66,17 +66,20 @@ def get_project_parameter(doc, param_name_or_obj, param_is_builtin = bool):
         print('O parametro informado nao foi encontrado no modelo')
         
 # open shared parameters file if existent
-sp_file = app.OpenSharedParameterFile()
 
-if not sp_file:
-    forms.alert('Shared parameters file was not found, add it and try again.')
+def open_shared_params_file():
 
-dict_shared_params = {}
-for group in sp_file.Groups:
-    for p_def in group.Definitions:
-        combined_name = '{}_{}'.format(group.Name, p_def.Name)
-        dict_shared_params[combined_name] = p_def
+    sp_file = app.OpenSharedParameterFile()
 
+    if not sp_file:
+        forms.alert('Shared parameters file was not found, add it and try again.')
+
+    dict_shared_params = {}
+    for group in sp_file.Groups:
+        for p_def in group.Definitions:
+            combined_name = '{}_{}'.format(group.Name, p_def.Name)
+            dict_shared_params[combined_name] = p_def
+    return dict_shared_params
 
 # def find_range(csv_table):
     # for row in csv_table:
