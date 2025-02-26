@@ -1,21 +1,124 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
-from revit_doc_interface import (RevitDocInterface, get_name)
-from pyrevit import forms
+doc = __revit__.ActiveUIDocument.Document
+from revit_doc_interface import (RevitDocInterface, pick_csv_file, remove_acentos, double_to_metric)
+from pyrevit import (forms, script)
 from Review.Phases import phase_created_is
+from Review.Levels import check_levels
+import os
+
+doc = __revit__.ActiveUIDocument.Document
+
+
+# script para revisao geral do modelo. seguir formato:
+# try:
+#   assert conferir_eixos()
+# except AssertionError:
+#   print("Eixos ausentes do projeto")
 
 
 # 🔴 Todos os elementos modelados devem pertencer à fase Levantamento
-
+interface = RevitDocInterface()
 phase_created_is('LEVANTAMENTO')
 
 # 🔴 A quantidade de niveis deve seguir a formula: qtdd pavimentos 
     # da edificcao/projeto x 2(pois para cada piso acabado ha um nivel _ossatura),
     # + 2 (Rua e Coberta)
+    
 # 🟡 O modelo deve conter apenas os níveis necessários para a edificação, sem excedentes não utilizados
+# check_levels()
+
+def comparar_modelo_com_planilha_areas():
+  csv_file_path = pick_csv_file()
+  # print(csv_file_path, type(csv_file_path))
+  # script.show_file_in_explorer(csv_file_path)
+  csv_table = script.load_csv(csv_file_path)
+  # print(csv_table)
+
+  # general building info from csv
+  building_name = csv_table[4][0]
+  rooms_totals_row = csv_table[-1]
+  room_count = int(rooms_totals_row[0])
+  room_area_count = rooms_totals_row[-2]
+  levels_count_csv = 0
+
+  # info by room from csv
+  model_rooms_area_count = 0
+  # dict_building_csv = {}
+  for row in csv_table:
+    if 'Nº AMBIENTE' in row[0] or 'DENOMINAÇÃO' in row[1]:
+      levels_count_csv += 1
+  #   # dict = {
+  #   #   room_number: [room_name, room_area]
+  #   #   # room_area: 
+  #   # }
+  #   if row[x] == :
+  #     print(row[3])
+      # dict_building_csv[row[0]] = {'NOME': row[1], 'AREA': row[2], 'USO': row[3]}
+    # print(row)
+
+  building_data_from_csv = {
+    building_name: {
+        'quantidade de ambientes': room_count, 
+        'area util total': room_area_count,
+        'quantidade de pavimentos': levels_count_csv,
+      }
+  }
+  # print(building_data_from_csv)
+
+  for room in interface.rooms:
+    room_area = room.get_Parameter(
+      DB.BuiltInParameter.ROOM_AREA
+      ).AsValueString().split(' ')[0]
+    model_rooms_area_count += float(room_area)
+
+  building_data_from_model = {
+    building_name: {
+        'quantidade de ambientes': len(interface.rooms),
+        # 'quantidade de pavimentos': [level for level in interface.levels if 'Pavimento' in level.Name],
+        'area util total': model_rooms_area_count
+      }
+  }
+  # print(building_data_from_model)
+  
+  # comparar dicionarios do csv e modelo e apontar diferencas se houver
+  # for e in zip(building_data_from_csv, building_data_from_model):
+  #   print(e)
+
+comparar_modelo_com_planilha_areas()
+
+# conferir se oos eixos estao corretos
+def conferir_eixos():
+  grid_objs = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Grids).WhereElementIsNotElementType().ToElements()
+  grids_count = len(grid_objs)
+
+  vertical_grids = []
+  horizontal_grids = []
+  tolerance = 2e-6
+  if grids_count > 0:
+    print('Ha ', grids_count, 'eixos no projeto: ', [grid.Name for grid in grid_objs]) 
+    for grid in grid_objs:
+      max_point_X = grid.GetExtents().MaximumPoint.X
+      min_point_X = grid.GetExtents().MinimumPoint.X
+      max_point_Y = grid.GetExtents().MaximumPoint.Y
+      min_point_Y = grid.GetExtents().MinimumPoint.Y
+
+      # print(max_point_Y - min_point_Y)
+
+      if max_point_Y - min_point_Y < tolerance:
+        horizontal_grids.append(grid.Name)
+      elif max_point_X - min_point_X < tolerance:
+        vertical_grids.append(grid.Name)
+      # print(max_point, min_point)
+    print(vertical_grids, horizontal_grids)
+
+    return True
 
 
-
+try:
+  assert conferir_eixos()
+except AssertionError:
+  print("Eixos ausentes do projeto")
 
 """
 As categorias principais do modelo existem? (ex.: paredes, esquadrias)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
 import unicodedata
-from pyrevit import revit, forms
+from pyrevit import revit, forms, script
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
@@ -78,9 +78,29 @@ for group in sp_file.Groups:
         dict_shared_params[combined_name] = p_def
 
 
-# pick csv trough forms (to be used in pushbutton to compare data from table to data from model)
+# def find_range(csv_table):
+    # for row in csv_table:
+        # if 'CÓDIGO' in row:
+        # start_row = row[]
+        # start_column 
+    # print(csv_table[start_row][start_column])
+
+# pick csv trough pyRevit forms 
+# (to be used in pushbutton to compare data from table to data from model)
 def pick_csv_file():
     return forms.pick_file(file_ext='csv', multi_file=False)
+
+def save_to_csv(csv_file_path):
+  csv_rows = [ "list with your data"]
+  file = script.dump_csv(csv_rows, csv_file_path)
+  # os.open(file)
+  # output_path = os.path.join(
+  # os.path.expanduser('~'), 
+  # 'Areas_rev_ambientes{}.csv'
+  # .format(doc.Title)
+  #)
+  # script.load_csv("C:\Users\Administrator\Downloads\CCEN Administração - Planilha Áreas.xlsx - GERAL.csv")
+  script.load_csv(csv_file_path)
 
 def remove_acentos(texto):
     # Normaliza o texto e remove os acentos
