@@ -110,16 +110,59 @@ def conferir_eixos():
       elif max_point_X - min_point_X < tolerance:
         vertical_grids.append(grid.Name)
       # print(max_point, min_point)
-    print(vertical_grids, horizontal_grids)
-
-    return True
-
+    # print(vertical_grids, horizontal_grids)
+    if horizontal_grids[0] == 'A' and vertical_grids[0] == '1' and len(horizontal_grids) > 1:
+      return True
 
 try:
   assert conferir_eixos()
 except AssertionError:
   print("Eixos ausentes do projeto")
 
+def walls_have_zero_base_offset():
+  walls_with_base_offset = []
+  for wall in interface.walls:
+    
+    wall_base_offset = wall.get_Parameter(DB.BuiltInParameter.WALL_BASE_OFFSET)
+
+    if wall_base_offset.AsValueString() != '0.00':
+      print(
+          '{} - {} tem deslocamento da base igual a {} (deveria ser 0)'.format(
+            wall.Name, 
+            wall.get_Parameter(DB.BuiltInParameter.ALL_MODEL_TYPE_NAME).AsValueString(), 
+            wall_base_offset.AsValueString()
+            )
+        )
+      walls_with_base_offset.append(wall)
+    # if attachment_bottom:
+    #   print(attachment_bottom)
+
+
+def walls_have_base_constrained_to_structural_level():
+  incorrect_elements = []
+  for wall in interface.walls:
+      wall_base_constraint = wall.get_Parameter(DB.BuiltInParameter.WALL_BASE_CONSTRAINT)
+      wall_base_constraint_str = wall_base_constraint.AsValueString()
+      # print(wall_base_constraint.AsElementId())
+      wall_base_constraint_level = doc.GetElement(wall_base_constraint.AsElementId())
+      wall_base_constraint_level_str = wall_base_constraint_level.Name
+      if 'ossatura' not in wall_base_constraint_str.lower() or wall_base_constraint_level.get_Parameter(
+        DB.BuiltInParameter.LEVEL_IS_STRUCTURAL
+      ).AsInteger() == 0:
+        # print(wall)
+        incorrect_elements.append(wall)
+      
+  # if len(incorrect_elements) > 0:
+  #   call_to_model_correction = '{}'.format(len(incorrect_elements))
+  #   print(call_to_model_correction)
+  return len(incorrect_elements) == 0
+
+walls_have_zero_base_offset()
+
+try:
+  assert walls_have_base_constrained_to_structural_level()
+except AssertionError:
+  print('Ha paredes cuja base esta associada a niveis de piso acabado (deve ser nivel _ossatura)')
 """
 As categorias principais do modelo existem? (ex.: paredes, esquadrias)
 dwgs devem estar presentes como vinculos CAD (e nao como imports)
