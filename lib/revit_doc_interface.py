@@ -118,6 +118,11 @@ def map_cat_to_elements(self, keyword):
     return DB.FilteredElementCollector(self.doc).OfCategory(
         self.category_map[keyword]
     ).WhereElementIsNotElementType().ToElements()
+
+def map_cat_to_element_types(self, keyword):
+    return DB.FilteredElementCollector(self.doc).OfCategory(
+        self.category_map[keyword]
+    ).WhereElementIsElementType().ToElements()
     
 class RevitDocInterface:
     def __init__(self, RevitDoc=doc):
@@ -136,11 +141,20 @@ class RevitDocInterface:
             "materials": DB.BuiltInCategory.OST_Materials,
             "structural_columns": DB.BuiltInCategory.OST_StructuralColumns,
             "structural_framing": DB.BuiltInCategory.OST_StructuralFraming,
-            "columns": DB.BuiltInCategory.OST_Columns
+            "columns": DB.BuiltInCategory.OST_Columns,
+            "windows": DB.BuiltInCategory.OST_Windows
 
         }
     # def filter_elements_by_name(elements_list, reference_keywords):
     #     for element in elements_list:
+    @property
+    def window_types(self):
+        return map_cat_to_element_types(self, 'windows')
+    
+    @property
+    def windows(self):
+        return map_cat_to_elements(self, 'windows')
+    
     @property
     def columns(self):
         return map_cat_to_elements(self, 'columns')

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
 doc = __revit__.ActiveUIDocument.Document
-from revit_doc_interface import (RevitDocInterface, pick_csv_file, remove_acentos, double_to_metric)
+from revit_doc_interface import (RevitDocInterface, pick_csv_file, remove_acentos, double_to_metric, get_name)
 from pyrevit import (forms, script)
 from Review.Phases import phase_created_is
 from Review.Levels import check_levels
@@ -85,7 +85,11 @@ def comparar_modelo_com_planilha_areas():
   # for e in zip(building_data_from_csv, building_data_from_model):
   #   print(e)
 
-comparar_modelo_com_planilha_areas()
+# comparar_modelo_com_planilha_areas()
+
+
+
+
 
 # conferir se oos eixos estao corretos
 def conferir_eixos():
@@ -157,20 +161,112 @@ def walls_have_base_constrained_to_structural_level():
   #   print(call_to_model_correction)
   return len(incorrect_elements) == 0
 
-walls_have_zero_base_offset()
 
-try:
-  assert walls_have_base_constrained_to_structural_level()
+# try:
+#   assert walls_have_base_constrained_to_structural_level()
+#   assert walls_have_zero_base_offset()
+
+# except AssertionError:
+#   print('Ha paredes cuja base esta associada a niveis de piso acabado (deve ser nivel _ossatura)')
+
+def conferir_janelas():
+  incorrect_windows = []
+
+  # # add UI/msg before pick csv file
+  # csv_file_path = pick_csv_file()
+  # # script.show_file_in_explorer(csv_file_path)
+
+  # csv_table = script.load_csv(csv_file_path)
+
+  # script.show_file_in_explorer(csv_file_path)
+  # print(type()))
+  # for window_type in interface.window_types:
+  #   print(get_name(window_type))
+  # for window_family in interface.window_types:
+  #   print(get_name(window_family))
+  #   # ALL_MODEL_FAMILY_NAME
+  for fam in DB.FilteredElementCollector(doc).OfClass(DB.Family):
+    fam_obj_id = fam.get_Parameter(DB.BuiltInParameter.ELEM_FAMILY_PARAM).AsElementId()
+    fam_name = fam.Name
+    fam_category = fam.FamilyCategory.BuiltInCategory
+
+    if fam_category == DB.BuiltInCategory.OST_Windows:
+      print(fam_name)
+    
+    # print(fam_name, fam_category)
+conferir_janelas() 
+
+
+def conferir_paredes_tipo_revestimento():
+  incorrect_elements = []
+
+    # REV_s:
+    # 1. have their compound structre composed by only one layer
+#   below, WIP a dedicated fuction to find this out
+# def rev_walltypes_have_one_layer():
+#   for walltype in interface.walltypes:
+#     wall_layers = walltype.GetCompoundStructure().GetLayers() if walltype else ''
+#     # print(get_name(walltype))
+#     if 'REV' in get_name(walltype).upper() and len(wall_layers) == 1:
+#       print(get_name(walltype))
+#       print(wall_layers[0].Function)
+#       # if wall_layers[0].Function == 'Finish2':
+#       #   return True
+#     # return False
+
+# rev_walltypes_have_one_layer()
+
+  for walltype in interface.walltypes:
+    # print(get_name(walltype))
+    if 'REV' in get_name(walltype).upper() and len(walltype.GetCompoundStructure().GetLayers()) == 1:
+      # print(get_name(walltype))
+      wall_layers = walltype.GetCompoundStructure().GetLayers()
+
+          # 2. this layer must 
+    #     2.1 have its function (layer.Function) set to "Finish2"
+      if wall_layers[0].Function != 'Finish2':
+        incorrect_elements.append(walltype)
+    #     2.2 not have its material (layer.Material) empty (None or <By Category> or <Por Categoria>)
+    #     2.3 have width 0.002 <= 0.01
+    #         the closer the wall's width is to the minimum width allowed for non-Membrane-function layers, 
+    #         the more accurate will be the finish area count by room, for the respective wall representing the finish material,
+    #         given the current limitations of the script being developed to make these calculations
+
+  if len(incorrect_elements) == 0:
+    # msg all is correct
+    return True
+  else:
+    # 1 show which elements and what specifically about them are incorrect
+    # 2 - generate warning and/or instructions for model correction
+    # 3 - optionally correct ir right away and infomr user
+    return False
+
+try: 
+  assert conferir_paredes_tipo_revestimento()
 except AssertionError:
-  print('Ha paredes cuja base esta associada a niveis de piso acabado (deve ser nivel _ossatura)')
+  # custom message related to the specific assertion
+  # msg = 
+  print('Assertion error')
+
+
+def conferir_paredes_estrutura():
+      # ALV_ or ... in Name must be True
+      # ALV_s:
+      #   1. have their core layer with function "Structure"
+      #   2. have their core layer with structural materials, such as "Concrete" or "Masonry" (concreto ou alvenaria)
+      #   3. have their compound structure's total thickness (equivalent to wall.Width) of x cm (need conversion from double to m to cm)
+      #   4. have their surface (most external and most internal) layers 
+      #       with function "Substrate" or "Finish1", but never "Finish2" or "Structure"
+    return False
+
+
+
+
 """
 As categorias principais do modelo existem? (ex.: paredes, esquadrias)
 dwgs devem estar presentes como vinculos CAD (e nao como imports)
- elementos estao corretamente categorizados
-🟡 Os nomes dos ambientes devem seguir o padrão
 
 limites de ambientes respeitam colunas ou pilares (nao os incluem)
-as tags de ambiente devem ser dr uma familia especifica
 
 
 🔴 Erros Críticos (Check Inicial – 15 min)
@@ -193,27 +289,11 @@ one core wall element represents the core/nucleus of the wall, plus the substrac
 
 🔴 walltype names must be
     composed by 3 parts: prefix["REV_", ALV_, "" + "wall name" + "wall.width in cm", all upper case except for the wall name(capitalized, no special characters)
-    🟥 Structural and partition walls must be correctly differentiated
-
-    REV_s:
-    1. have their compound structre composed by only one layer
-    2. this layer must 
-        2.1 have its function (layer.Function) set to "Finish2"
-        2.2 not have its material (layer.Material) empty (None or <By Category> or <Por Categoria>)
-        2.3 have width 0.002 <= 0.01
-            the closer the wall's width is to the minimum width allowed for non-Membrane-function layers, 
-            the more accurate will be the finish area count by room, for the respective wall representing the finish material,
-            given the current limitations of the script being developed to make these calculations
-
+    
     if wall name prefix is anything other than standard
     correct it to the standard based on the unique characteristics of the walltype
     GENERICA_xCM
-    ALV_s:
-        1. have their core layer with function "Structure"
-        2. have their core layer with structural materials, such as "Concrete" or "Masonry" (concreto ou alvenaria)
-        3. have their compound structure's total thickness (equivalent to wall.Width) of x cm (need conversion from double to m to cm)
-        4. have their surface (most external and most internal) layers 
-            with function "Substrate" or "Finish1", but never "Finish2" or "Structure"
+
 🔴 esquadrias devem estar conforme tabela csv exportada a partir do modelo dwg da edificacao. na ausencia de tabela no dwg,
     a referencia sera a representacao bidimensional em plantas baixas e elevacoes.
 
@@ -264,6 +344,8 @@ observados em edificacoes com modelos ja concluidos)
 ✅ O modelo deve estar limpo, sem elementos desnecessários (usar Limpar não utilizados apenas ao final da modelagem)
 ✅ As cotas auxiliares (AUX 3mm) devem estar configuradas corretamente e invisíveis em vistas para impressão
 🟢 As tags e anotações devem estar legíveis e bem distribuídas
+🟢 as tags de ambiente devem ser dr uma familia especifica (a disponibilizada no template mais recente)
+
 
 
 
