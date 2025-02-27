@@ -10,12 +10,7 @@ import os
 doc = __revit__.ActiveUIDocument.Document
 
 
-# script para revisao geral do modelo. seguir formato:
-# try:
-#   assert conferir_eixos()
-# except AssertionError:
-#   print("Eixos ausentes do projeto")
-
+# script para revisao geral do modelo. seguir formato: ???
 
 # 🔴 Todos os elementos modelados devem pertencer à fase Levantamento
 interface = RevitDocInterface()
@@ -92,7 +87,7 @@ def comparar_modelo_com_planilha_areas():
 
 
 # conferir se oos eixos estao corretos
-def conferir_eixos():
+def eixos_corretos():
   grid_objs = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Grids).WhereElementIsNotElementType().ToElements()
   grids_count = len(grid_objs)
 
@@ -118,10 +113,9 @@ def conferir_eixos():
     if horizontal_grids[0] == 'A' and vertical_grids[0] == '1' and len(horizontal_grids) > 1:
       return True
 
-try:
-  assert conferir_eixos()
-except AssertionError:
+if not eixos_corretos():
   print("Eixos ausentes do projeto")
+
 
 def set_new_value(transaction_description, param_on_change, new_value):
   t = DB.Transaction(doc, '{}'.format(transaction_description))
@@ -133,18 +127,11 @@ def set_new_value(transaction_description, param_on_change, new_value):
     print(e)
   t.Commit()
 
-def confirm_before_batch_correct(param_on_change, elem_list, new_value):
-      confirm_correction_dialog = forms.CommandSwitchWindow.show(['SIM', 'NAO'], message='Corrigir as incorrecoes encontradas?')
-      if confirm_correction_dialog == 'SIM':
-        for elem in elem_list:
-          set_new_value('modify value of walls\'s Base Offset parameter', 
-                        elem.get_Parameter(param_on_change),
-                        new_value
-          )     
-      else:
-        pass
-
-def all_walls_have_zero_base_offset(target_param_obj, target_elements, default_value):
+def elements_parameter_is_valid(target_param_obj, target_elements, default_value):
+  # if not default_value:
+  #   print(
+  #     'O parametro {}'
+  #   )
   target_category_name = target_elements[0].Category.Name if target_elements else "Desconhecido"
   # The correct value for the parameter
   print(
@@ -171,14 +158,31 @@ def all_walls_have_zero_base_offset(target_param_obj, target_elements, default_v
       incorrect_elements.append(elem)
   print(len(incorrect_elements))
 
-  if len(incorrect_elements) != 0:
-    confirm_before_batch_correct(
-      target_param_obj, 
-      incorrect_elements,
-      default_value
-    )
+  return len(incorrect_elements) == 0, incorrect_elements  # Retorna True/False e a lista de elementos errados
 
-all_walls_have_zero_base_offset(DB.BuiltInParameter.WALL_BASE_OFFSET, interface.walls, 0)
+
+def confirm_before_batch_correct(param_on_change, elem_list, new_value):
+      confirm_correction_dialog = forms.CommandSwitchWindow.show(['SIM', 'NAO'], message='Corrigir as incorrecoes encontradas?')
+      if confirm_correction_dialog == 'SIM':
+        for elem in elem_list:
+          set_new_value('modify value of walls\'s Base Offset parameter', 
+                        elem.get_Parameter(param_on_change),
+                        new_value
+          )     
+      else:
+        pass
+
+walls_ok, incorrect_elements = elements_parameter_is_valid(DB.BuiltInParameter.WALL_BASE_OFFSET, interface.walls, 0)
+
+if not walls_ok:
+    confirm_before_batch_correct(DB.BuiltInParameter.WALL_BASE_OFFSET, incorrect_elements, 0)
+
+
+
+# walls_ook, incorrect_elements = elements_parameter_is_valid(DB.BuiltInParameter.WALL_BASE_CONSTRAINT, interface.walls, True)
+# if not walls_ook:
+#     confirm_before_batch_correct(DB.BuiltInParameter.WALL_BASE_CONSTRAINT, incorrect_elements, True)
+
 
 def walls_have_base_constrained_to_structural_level():
   incorrect_elements = []
@@ -193,16 +197,10 @@ def walls_have_base_constrained_to_structural_level():
       ).AsInteger() == 0:
         # print(wall)
         incorrect_elements.append(wall)
-  # if len(incorrect_elements) > 0:
-  #   call_to_model_correction = '{}'.format(len(incorrect_elements))
-  #   print(call_to_model_correction)
   return len(incorrect_elements) == 0
 
-try:
-  assert walls_have_base_constrained_to_structural_level()
-
-except AssertionError:
-  print('Ha paredes cuja base esta associada a niveis de piso acabado (deve ser nivel _ossatura)')
+interface.walls
+print('Ha paredes cuja base esta associada a niveis de piso acabado (deve ser nivel _ossatura)')
 
 
 def conferir_janelas():

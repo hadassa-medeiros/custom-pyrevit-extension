@@ -93,8 +93,8 @@ def open_shared_params_file():
 def pick_csv_file():
     return forms.pick_file(file_ext='csv', multi_file=False)
 
-def save_to_csv(csv_file_path):
-  csv_rows = [ "list with your data"]
+def save_to_csv(list_with_data, csv_file_path):
+  csv_rows = list_with_data
   file = script.dump_csv(csv_rows, csv_file_path)
   # os.open(file)
   # output_path = os.path.join(

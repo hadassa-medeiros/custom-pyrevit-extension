@@ -76,6 +76,7 @@ def join_geometry(doc, category_A, category_B):
                                     try:
                                         DB.JoinGeometryUtils.JoinGeometry(doc, elem_A, elem_B)
                                         print("Elementos unidos: {} (ID {}) + {} (ID {})".format(elem_A.Name, elem_A.Id, elem_B.Name, elem_B.Id))
+                                    
                                     except Exception as e:
                                         print("Erro ao unir geometria: {}".format(e))
     except Exception as e:
