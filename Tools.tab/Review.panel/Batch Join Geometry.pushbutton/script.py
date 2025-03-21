@@ -6,7 +6,7 @@ from pyrevit import forms
 
 interface = RevitDocInterface()
 
-__title__     = "Unir geometrias intersectantes"
+__title__     = "Batch Join Geometry"
 __author__    = "Hadassa Medeiros"
 doc = __revit__.ActiveUIDocument.Document
 

@@ -95,7 +95,8 @@ def eixos_corretos():
   horizontal_grids = []
   tolerance = 2e-6
   if grids_count > 0:
-    print('Ha ', grids_count, 'eixos no projeto: ', [grid.Name for grid in grid_objs]) 
+    print(grids_count, 'Grids found: ', [grid.Name for grid in grid_objs])
+    print('------------------------------------') 
     for grid in grid_objs:
       max_point_X = grid.GetExtents().MaximumPoint.X
       min_point_X = grid.GetExtents().MinimumPoint.X
@@ -114,8 +115,7 @@ def eixos_corretos():
       return True
 
 if not eixos_corretos():
-  print("Eixos ausentes do projeto")
-
+  print("🔴 Missing project grids 🔴")
 
 def set_new_value(transaction_description, param_on_change, new_value):
   t = DB.Transaction(doc, '{}'.format(transaction_description))
@@ -135,7 +135,7 @@ def elements_parameter_is_valid(target_param_obj, target_elements, default_value
   target_category_name = target_elements[0].Category.Name if target_elements else "Desconhecido"
   # The correct value for the parameter
   print(
-    'O parametro {} de {} deve ser igual a {}'.format(
+    '{} of {} must equal {}'.format(
       target_param_obj, 
       target_category_name, 
       default_value
@@ -149,7 +149,7 @@ def elements_parameter_is_valid(target_param_obj, target_elements, default_value
     elem_target_param_normalized = abs(float(elem_target_param.AsValueString()))
     if elem_target_param_normalized <= 0.15 and elem_target_param_normalized > 0:
       print(
-          '{} - {} tem deslocamento da base igual a {}'.format(
+          '{} - {} {}'.format(
             elem.Name, 
             elem.get_Parameter(DB.BuiltInParameter.ALL_MODEL_TYPE_NAME).AsValueString(), 
             elem_target_param.AsValueString()
@@ -162,8 +162,8 @@ def elements_parameter_is_valid(target_param_obj, target_elements, default_value
 
 
 def confirm_before_batch_correct(param_on_change, elem_list, new_value):
-      confirm_correction_dialog = forms.CommandSwitchWindow.show(['SIM', 'NAO'], message='Corrigir as incorrecoes encontradas?')
-      if confirm_correction_dialog == 'SIM':
+      confirm_correction_dialog = forms.CommandSwitchWindow.show(['YES', 'NO'], message='Would you like to fix the incorrect elements found in the model?')
+      if confirm_correction_dialog == 'YES':
         for elem in elem_list:
           set_new_value('modify value of walls\'s Base Offset parameter', 
                         elem.get_Parameter(param_on_change),
@@ -200,8 +200,8 @@ def walls_have_base_constrained_to_structural_level():
   return len(incorrect_elements) == 0
 
 interface.walls
-print('Ha paredes cuja base esta associada a niveis de piso acabado (deve ser nivel _ossatura)')
-
+print('🔴 Ha paredes cuja base esta associada a niveis de piso acabado (deve ser nivel _ossatura) 🔴')
+print('🔴 Some walls have the wrong type of level as their base constraint: is Finish type, should be Structural type 🔴')
 
 def conferir_janelas():
   incorrect_windows = []
@@ -226,6 +226,7 @@ def conferir_janelas():
 
     if fam_category == DB.BuiltInCategory.OST_Windows:
       print(fam_name)
+      return
     
     # print(fam_name, fam_category)
 conferir_janelas() 
@@ -291,7 +292,7 @@ def column_tops_are_attached():
   # checar se o pilar no nivel x ta anexado e 2- a quem. se nao ta, anexar a laje struct 
   for struct_column in interface.struct_columns:
     is_attached_param = struct_column.get_Parameter(DB.BuiltInParameter.COLUMN_TOP_ATTACHED_PARAM)
-    print(struct_column.Id, type(struct_column), struct_column.Name, is_attached_param.AsInteger())
+  #  print(struct_column.Id, type(struct_column), struct_column.Name, is_attached_param.AsInteger())
     # try:
 
     # except Exception as e:
@@ -324,7 +325,9 @@ def lajes_sao_estruturais():
         ) or "EST" in floortype_name and 'REV' not in floortype_name or 'FUNDACAO' in floortype_name
 
         if is_structural_type:
-            print("Tipo de laje estrutural: {}".format(floortype_name))
+            print("Structural floor type: {}".format(floortype_name))
+            print('---------------------------')
+            # print("Tipo de laje estrutural: {}".format(floortype_name))
 
             # Busca todas as instâncias desse tipo
             lajes_instancias = [
