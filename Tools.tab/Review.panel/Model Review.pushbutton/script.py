@@ -3,18 +3,18 @@ import Autodesk.Revit.DB as DB
 doc = __revit__.ActiveUIDocument.Document
 from revit_doc_interface import (RevitDocInterface, pick_csv_file, remove_acentos, double_to_metric, get_name)
 from pyrevit import (forms, script)
-from Review.Phases import phase_created_is
+from Review.Phases import review_phase_created
 from Review.Levels import check_levels
 import os
 
 doc = __revit__.ActiveUIDocument.Document
 
 
-# script para revisao geral do modelo. seguir formato: ???
+# script para revisao geral do modelo
 
 # 🔴 Todos os elementos modelados devem pertencer à fase Levantamento
 interface = RevitDocInterface()
-phase_created_is('LEVANTAMENTO')
+review_phase_created('LEVANTAMENTO')
 
 # 🔴 A quantidade de niveis deve seguir a formula: qtdd pavimentos 
     # da edificcao/projeto x 2(pois para cada piso acabado ha um nivel _ossatura),

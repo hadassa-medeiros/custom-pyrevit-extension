@@ -126,7 +126,7 @@ def map_cat_to_element_types(self, keyword):
     return DB.FilteredElementCollector(self.doc).OfCategory(
         self.category_map[keyword]
     ).WhereElementIsElementType().ToElements()
-    
+
 class RevitDocInterface:
     def __init__(self, RevitDoc=doc):
         self.doc = RevitDoc# self.collector = DB.FilteredElementCollector(RevitDoc)
@@ -145,7 +145,8 @@ class RevitDocInterface:
             "structural_columns": DB.BuiltInCategory.OST_StructuralColumns,
             "structural_framing": DB.BuiltInCategory.OST_StructuralFraming,
             "columns": DB.BuiltInCategory.OST_Columns,
-            "windows": DB.BuiltInCategory.OST_Windows
+            "windows": DB.BuiltInCategory.OST_Windows,
+            "doors": DB.BuiltInCategory.OST_Doors,
 
         }
     # def filter_elements_by_name(elements_list, reference_keywords):
@@ -157,6 +158,10 @@ class RevitDocInterface:
     @property
     def windows(self):
         return map_cat_to_elements(self, 'windows')
+    
+    @property
+    def doors(self):
+        return map_cat_to_elements(self, 'doors')
     
     @property
     def columns(self):
@@ -236,9 +241,15 @@ class RevitDocInterface:
             ]
         return filtered_lines
     
+    def find_phase_by_name(self, phase_name):
+        for phase in self.doc.Phases:
+            if phase.Name == phase_name.upper():
+                return phase
+        return None
+    
 def find_id_by_element_name(RevitListOfElements, keyword):
     for element in RevitListOfElements:
-        if get_name(element) == keyword:
+        if get_name(element).lower() == keyword:
             return element.Id
 
 def get_ids_of(RevitListOfElements):
@@ -288,6 +299,17 @@ def double_to_metric(value):
 def get_room_number(roomElement):
     return roomElement.get_Parameter(DB.BuiltInParameter.ROOM_NUMBER).AsString()
 
+def sq_ft_to_m2(area_double):
+    """Converte valor interno do Revit (pés², double) para área em metros quadrados."""
+    return round(area_double * 0.092903, 4)
+
+def get_elem_from_typeId(elem):
+    return doc.GetElement(elem.GetTypeId()) if elem.GetTypeId() else None
+
+def get_room_area(room_elem):
+    if isinstance(room_elem, DB.SpatialElement) and room_elem.Category.Id.IntegerValue == int(DB.BuiltInCategory.OST_Rooms):
+        return room_elem.get_Parameter(DB.BuiltInParameter.ROOM_AREA).AsDouble()
+    
 class ModelLine:
     # def __init__(self, RevitOBJ: ModelLines):
     def __init__(self, RevitOBJ):

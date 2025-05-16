@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
-from revit_doc_interface import (RevitDocInterface, ModelLine, find_id_by_element_name, get_name, get_names, meter_to_double)
+from revit_doc_interface import (RevitDocInterface, ModelLine, find_id_by_element_name, get_name, get_names, metric_to_double)
 # import math
 import unicodedata
 
@@ -11,20 +11,20 @@ doc = __revit__.ActiveUIDocument.Document
 
 interface = RevitDocInterface()
 # find groups of lines that represent the faces of a same wall and store them
-default_wall_width = meter_to_double(0.15)
+default_wall_width = metric_to_double(0.15)
+# print([get_name(wt) for wt in interface.walltypes])  # Lista todos os tipos de parede disponíveis
 
 def default_wall_widths(list_of_common_wall_widths):
-    return [meter_to_double(common_w) for common_w in list_of_common_wall_widths]
+    return [metric_to_double(common_w) for common_w in list_of_common_wall_widths]
 
 print(default_wall_widths([0.15, 0.20, 0.25, 0.30]))
 # print(default_wall_width)
-default_walltype_id = find_id_by_element_name(interface.walltypes, "GENERICA_15CM")
-
-all_levels = interface.levels
+default_walltype_id = find_id_by_element_name(interface.walltypes, "generica_15cm")
+print(default_walltype_id)  # Deve retornar um número válido (ID do tipo de parede)
 
 cad_wall_lines = interface.filter_lines_by_name(["Parede"])
 tolerance = default_wall_width * 0.05 #allows +/- 2% variation to account for minor CAD drawing imprecisions
-# print(tolerance)
+
 def is_horizontal(model_line):
     return abs(model_line.end_y - model_line.start_y) == 0
 
@@ -71,7 +71,6 @@ def are_parallel(line_A, line_B):
     else:
         # Para diagonais ou imprecisões, verifica se o comprimento do produto vetorial é pequeno (< 1)
         is_parallel = cross_product.GetLength() < .4
-
     # Retorna verdadeiro se as linhas estiverem no mesmo plano e forem paralelas
     return lines_share_same_plane and is_parallel
 
@@ -114,7 +113,7 @@ for l in interface.levels:
 
 for i in range(len(cad_wall_lines)):
     def lines_have_minimum_length(line_A, line_B):
-        min_length = default_wall_width*1.5
+        min_length = default_wall_width*2.5
         def line_length(line):
             return line.get_Parameter(DB.BuiltInParameter.CURVE_ELEM_LENGTH).AsDouble()
         # print(line_length(line_A), line_length(line_B))
@@ -191,7 +190,7 @@ for lines in grouped_lines:
         lines,
         key=lambda line: (line.start_x, line.start_y)
     )
-    print(sorted_lines)
+    # print(sorted_lines)
     # Seleciona a primeira como linha de referência e a segunda como linha auxiliar
     ref_line = sorted_lines[0]
     aux_line = sorted_lines[1]

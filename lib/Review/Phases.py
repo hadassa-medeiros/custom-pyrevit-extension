@@ -1,95 +1,82 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
 from pyrevit import forms
+from Review.Audit import set_auditoria_bim
 
 doc = __revit__.ActiveUIDocument.Document
 collector = DB.FilteredElementCollector(doc)
 
 def get_phase_created(elem):
-        return elem.get_Parameter(DB.BuiltInParameter.PHASE_CREATED)
+    return elem.get_Parameter(DB.BuiltInParameter.PHASE_CREATED)
 
 def get_phase_id_by_name(phase_name):
-    for phase in DB.FilteredElementCollector(doc).OfClass(DB.Phase).ToElements():
+    for phase in DB.FilteredElementCollector(doc).OfClass(DB.Phase).Toelems():
         if phase.Name == phase_name:
             return phase.Id
 
-def filter_elements_which_have_phase_created_parameter():
+def filter_elems_with_phase_created_param():
     rule_phase_created = DB.ParameterFilterRuleFactory.CreateHasValueParameterRule(
          DB.ElementId(DB.BuiltInParameter.PHASE_CREATED)
          )
     has_phase_created_filter = DB.ElementParameterFilter(rule_phase_created)
-    return collector.WherePasses(has_phase_created_filter).ToElements()
+    return collector.WherePasses(has_phase_created_filter).Toelems()
 
 def correct_elem_phase(elem, elem_phase_created_param_obj, target_phase_created_id):
-    t = DB.Transaction(doc, "Correct created phase parameter")
+    t = DB.Transaction(doc, "Corrigir fase criada")
     t.Start()
     try:
-        print('Corrigindo {} de {} para'.format(
-            elem.Name, 
-            elem_phase_created_param_obj.AsValueString()
-            )
-        )
         elem_phase_created_param_obj.Set(target_phase_created_id)
-        print(elem_phase_created_param_obj.AsValueString())
     except Exception as e:
         print(e)
-        pass
     t.Commit()
-# # allow user to work on all levesl at once or one at a time
-# selected_rooms_and_names = forms.SelectFromList.show(room_numbers_and_names, button_name='Select Rooms', multiselect=True)
 
-# 1. PHASE OF ALL ELEMENTS SHOULD BE 'LEVANTAMENTO'
-def phase_created_is(target_phase_created_name):
+def review_phase_created(target_phase_created_name):
     target_phase_created_id = get_phase_id_by_name(target_phase_created_name)
     
-    elements_in_incorrect_phase = []
+    elems_in_incorrect_phase = {}
 
-    for elem in filter_elements_which_have_phase_created_parameter():
+    for elem in filter_elems_with_phase_created_param():
         phase_created = elem.get_Parameter(DB.BuiltInParameter.PHASE_CREATED)
         phase_created_name = phase_created.AsValueString() if phase_created else None
-        phase_demolished = elem.get_Parameter(DB.BuiltInParameter.PHASE_DEMOLISHED)
-        phase_demolished_name = phase_demolished.AsValueString() if phase_demolished else None
-        
-        # print(
-        #     "Elemento {} | ID {} | Fase Criada: {} | Fase Demolida: {}".format(elem.Name, elem.Id, created_phase_name, demolished_phase_name)
-        # )
-       
+
         if phase_created_name != target_phase_created_name:
-            correct_elem_phase(elem, phase_created, target_phase_created_id)
+            category_name = elem.Category.Name if elem.Category else "Sem Categoria"
+            element_name = elem.Name
+            set_auditoria_bim(elem, "Fase incorreta detectada – revisar")
 
-            elements_in_incorrect_phase.append(elem)
+            # Inicializar estrutura do dicionário
+            if category_name not in elems_in_incorrect_phase:
+                elems_in_incorrect_phase[category_name] = {}
+            if element_name not in elems_in_incorrect_phase[category_name]:
+                elems_in_incorrect_phase[category_name][element_name] = []
 
-            print('{} - {} - Fase {}'.format(
-                elem.Name, 
-                elem.Category.Name, 
-                phase_created.AsValueString()
-            ))
-            
-            # inserir botao de confirmacao para corrigir o modelo ou nao
-            # correct_elem_phase(elem, phase_created, target_phase_created_id)
+            elems_in_incorrect_phase[category_name][element_name].append(elem)
+
+    if elems_in_incorrect_phase:
+        print("\nElementos em fase incorreta:\n")
+        for category, elems_by_name in elems_in_incorrect_phase.items():
+            print("Categoria: {}".format(category))
+            for name, elems in elems_by_name.items():
+                print("  {}: {} elemento(s)".format(name, len(elems)))
         
-    if len(elements_in_incorrect_phase) > 0:
-        print('{} elementos em fase incorreta (deveria ser {})'.format(
-        len(elements_in_incorrect_phase), 
-        target_phase_created_name
-    ))
+        # Mostrar confirmação ao usuário
+        confirm = forms.alert(
+            "Foram encontrados elementos fora da fase '{}'.\nDeseja corrigir automaticamente?".format(target_phase_created_name),
+            title="Corrigir Fases?",
+            ok=True,
+            cancel=True
+        )
+        
+        if confirm:
+            for category, elems_by_name in elems_in_incorrect_phase.items():
+                for name, elems in elems_by_name.items():
+                    for elem in elems:
+                        phase_created = elem.get_Parameter(DB.BuiltInParameter.PHASE_CREATED)
+                        correct_elem_phase(elem, phase_created, target_phase_created_id)
+                        set_auditoria_bim(elem, "Fase corrigida")
 
-    # def batch_correct_elements_phase(elements_list, target_phase_created_id):
-    #     for element in elements_list:
-    #         correct_elem_phase(element, target_phase_created_id)
+            forms.alert("Fases corrigidas com sucesso.", title="Concluído")
+        else:
+            forms.alert("Nenhuma alteração foi feita.", title="Cancelado")
 
-    #     if len(elements_list) == 1:
-    #         print(
-    #         "{} elemento detectado fora da fase {} foi corrigido'."
-    #         .format(len(elements_list), target_phase_created)
-    #         )
-    #     elif len(elements_list) > 1:
-    #         print('_'*50)
-    #         print(
-    #             "{} elementos detectados fora da fase {} foram corrigidos."
-    #             .format(len(elements_list), target_phase_created)
-    #             )
-    #     else:
-    #         print(
-    #             "Todos os elementos estão na fase '{}'!".format(target_phase_created)
-    #             )    
+review_phase_created("LEVANTAMENTO")
