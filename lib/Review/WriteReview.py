@@ -1,19 +1,21 @@
+# -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
 doc = __revit__.ActiveUIDocument.Document
 
-def set_auditoria_bim(elem, texto):
-    param = elem.LookupParameter("Auditoria CCBI")
+def write_review_comments(elem, texto):
+    param = elem.LookupParameter("Comentários de Revisão por Elemento")
     if param and param.StorageType == DB.StorageType.String:
         existente = param.AsString() or ""
 
-        novo_valor = "{} ; {}".format(existente, texto) if existente else texto
+        novo_valor = "{}; {}".format(existente, texto) if existente else texto
 
-        t = DB.Transaction(doc, "Atualizar Auditoria BIM")
+        t = DB.Transaction(doc, "Inserir comentario de revisao em item do modelo")
         t.Start()
+        
         try:
             param.Set(novo_valor)
         except Exception as e:
-            print("Erro ao definir Auditoria CCBI em {}: {}".format(elem.Id, e))
+            print("Erro ao escrever comentario de revisao em {}: {}".format(elem.Id, e))
         t.Commit()
 # t = DB.Transaction(doc, "Auditoria BIM em lote")
 # t.Start()
