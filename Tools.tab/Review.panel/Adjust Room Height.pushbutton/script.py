@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import clr
+from revit_doc_interface import (metric_to_double)
 
 clr.AddReference('RevitAPI')
 import Autodesk.Revit.DB as DB
 import Autodesk.Revit.UI.Selection as sel
 from pyrevit import forms
 
-__title__     = "Ajustar altura de ambiente conforme nível acima"
+__title__     = "Adjust Room Height"
 __author__    = "Hadassa Medeiros"
 doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
@@ -46,6 +47,7 @@ for selected_room_number in selected_room_numbers:
     # Useful information about project's rooms:
     room_default_height_offset = int(3 * 3.28084)  # Value AsDouble that Equals to 2.74m
     room_upper_offset = room.get_Parameter(DB.BuiltInParameter.ROOM_UPPER_OFFSET)
+    room_lower_offset = room.get_Parameter(DB.BuiltInParameter.ROOM_LOWER_OFFSET)
     room_level_elev = (room.Level).get_Parameter(DB.BuiltInParameter.LEVEL_ELEV).AsDouble()
     room_upper_level = room.get_Parameter(DB.BuiltInParameter.ROOM_UPPER_LEVEL).AsElementId()
     room_id = room.Id.ToString()

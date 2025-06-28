@@ -6,7 +6,7 @@ from pyrevit import forms
 
 interface = RevitDocInterface()
 
-__title__     = "Unir geometrias intersectantes"
+__title__     = "Batch Join Geometry"
 __author__    = "Hadassa Medeiros"
 doc = __revit__.ActiveUIDocument.Document
 
@@ -47,7 +47,6 @@ selected_category_B = forms.CommandSwitchWindow.show(
 )
 
 def join_geometry(doc, category_A, category_B):
-    # Inicia uma única transação para todas as alterações
     elements_A = category_names_and_elements[category_A]
     elements_B = category_names_and_elements[category_B]
 
@@ -77,6 +76,7 @@ def join_geometry(doc, category_A, category_B):
                                     try:
                                         DB.JoinGeometryUtils.JoinGeometry(doc, elem_A, elem_B)
                                         print("Elementos unidos: {} (ID {}) + {} (ID {})".format(elem_A.Name, elem_A.Id, elem_B.Name, elem_B.Id))
+                                    
                                     except Exception as e:
                                         print("Erro ao unir geometria: {}".format(e))
     except Exception as e:

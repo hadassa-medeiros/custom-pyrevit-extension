@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
 import unicodedata
-from pyrevit import revit, forms
+from pyrevit import revit, forms, script
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
@@ -9,6 +9,45 @@ app = doc.Application
 
 
 # about parameters:
+# WIP
+def get_elem_param_obj(elem, builtin_or_shared_param):
+        if isinstance(builtin_or_shared_param, DB.BuiltInParameter):
+            elem_param = elem.get_Parameter(builtin_or_shared_param)
+        else:
+            elem_param = elem.LookupParameter(builtin_or_shared_param)
+        return elem_param
+
+def assign_new_value_to_parameter(elem, param, correct_value):
+    # ver que tipo de objeto e o correct_value (id, nome, numero)
+
+    # print(type(correct_value))
+    # print(isinstance(correct_value, DB.ElementId))
+    elem_param = get_elem_param_obj(elem, param)
+    param_value = elem_param.Id
+    # print(param_value)
+
+    if type(param_value) == type(correct_value):
+        # print('yess')
+        if param_value != correct_value:
+            t = DB.Transaction(doc, "Correct created phase parameter")
+            t.Start()
+            try:
+                elem_param.Set(correct_value)
+                print(
+                    "{} corrigido (era {})"
+                    .format(elem.Name, param_value)
+                    )
+            except Exception as e:
+                print(e)
+                pass
+            t.Commit()
+    else:
+        print(
+              'Os argumentos deveriam ter o mesmo tipo, mas sao {} e {}'.format(
+                   type(param_value), type(correct_value)
+              )
+        )   
+
 def normalize_param(param_obj):
     return param_obj.AsString() if param_obj and param_obj.HasValue else None
 
@@ -27,21 +66,44 @@ def get_project_parameter(doc, param_name_or_obj, param_is_builtin = bool):
         print('O parametro informado nao foi encontrado no modelo')
         
 # open shared parameters file if existent
-sp_file = app.OpenSharedParameterFile()
 
-if not sp_file:
-    forms.alert('Shared parameters file was not found, add it and try again.')
+def open_shared_params_file():
 
-dict_shared_params = {}
-for group in sp_file.Groups:
-    for p_def in group.Definitions:
-        combined_name = '{}_{}'.format(group.Name, p_def.Name)
-        dict_shared_params[combined_name] = p_def
+    sp_file = app.OpenSharedParameterFile()
 
+    if not sp_file:
+        forms.alert('Shared parameters file was not found, add it and try again.')
 
-# pick csv trough forms (to be used in pushbutton to compare data from table to data from model)
+    dict_shared_params = {}
+    for group in sp_file.Groups:
+        for p_def in group.Definitions:
+            combined_name = '{}_{}'.format(group.Name, p_def.Name)
+            dict_shared_params[combined_name] = p_def
+    return dict_shared_params
+
+# def find_range(csv_table):
+    # for row in csv_table:
+        # if 'CÓDIGO' in row:
+        # start_row = row[]
+        # start_column 
+    # print(csv_table[start_row][start_column])
+
+# pick csv trough pyRevit forms 
+# (to be used in pushbutton to compare data from table to data from model)
 def pick_csv_file():
     return forms.pick_file(file_ext='csv', multi_file=False)
+
+def save_to_csv(list_with_data, csv_file_path):
+  csv_rows = list_with_data
+  file = script.dump_csv(csv_rows, csv_file_path)
+  # os.open(file)
+  # output_path = os.path.join(
+  # os.path.expanduser('~'), 
+  # 'Areas_rev_ambientes{}.csv'
+  # .format(doc.Title)
+  #)
+  # script.load_csv("C:\Users\Administrator\Downloads\CCEN Administração - Planilha Áreas.xlsx - GERAL.csv")
+  script.load_csv(csv_file_path)
 
 def remove_acentos(texto):
     # Normaliza o texto e remove os acentos
@@ -59,7 +121,12 @@ def map_cat_to_elements(self, keyword):
     return DB.FilteredElementCollector(self.doc).OfCategory(
         self.category_map[keyword]
     ).WhereElementIsNotElementType().ToElements()
-    
+
+def map_cat_to_element_types(self, keyword):
+    return DB.FilteredElementCollector(self.doc).OfCategory(
+        self.category_map[keyword]
+    ).WhereElementIsElementType().ToElements()
+
 class RevitDocInterface:
     def __init__(self, RevitDoc=doc):
         self.doc = RevitDoc# self.collector = DB.FilteredElementCollector(RevitDoc)
@@ -77,11 +144,25 @@ class RevitDocInterface:
             "materials": DB.BuiltInCategory.OST_Materials,
             "structural_columns": DB.BuiltInCategory.OST_StructuralColumns,
             "structural_framing": DB.BuiltInCategory.OST_StructuralFraming,
-            "columns": DB.BuiltInCategory.OST_Columns
+            "columns": DB.BuiltInCategory.OST_Columns,
+            "windows": DB.BuiltInCategory.OST_Windows,
+            "doors": DB.BuiltInCategory.OST_Doors,
 
         }
     # def filter_elements_by_name(elements_list, reference_keywords):
     #     for element in elements_list:
+    @property
+    def window_types(self):
+        return map_cat_to_element_types(self, 'windows')
+    
+    @property
+    def windows(self):
+        return map_cat_to_elements(self, 'windows')
+    
+    @property
+    def doors(self):
+        return map_cat_to_elements(self, 'doors')
+    
     @property
     def columns(self):
         return map_cat_to_elements(self, 'columns')
@@ -160,9 +241,15 @@ class RevitDocInterface:
             ]
         return filtered_lines
     
+    def find_phase_by_name(self, phase_name):
+        for phase in self.doc.Phases:
+            if phase.Name == phase_name.upper():
+                return phase
+        return None
+    
 def find_id_by_element_name(RevitListOfElements, keyword):
     for element in RevitListOfElements:
-        if get_name(element) == keyword:
+        if get_name(element).lower() == keyword:
             return element.Id
 
 def get_ids_of(RevitListOfElements):
@@ -199,7 +286,7 @@ def get_element(RevitListOfElements):
     elements_list = [element for element in RevitListOfElements]
     return elements_list[0]
 
-def meter_to_double(value_in_meters):
+def metric_to_double(value_in_meters):
     meter_to_double_factor = 3.280840
     value_in_double = round(value_in_meters * meter_to_double_factor, 5)
     return value_in_double
@@ -212,6 +299,17 @@ def double_to_metric(value):
 def get_room_number(roomElement):
     return roomElement.get_Parameter(DB.BuiltInParameter.ROOM_NUMBER).AsString()
 
+def sq_ft_to_m2(area_double):
+    """Converte valor interno do Revit (pés², double) para área em metros quadrados."""
+    return round(area_double * 0.092903, 4)
+
+def get_elem_from_typeId(elem):
+    return doc.GetElement(elem.GetTypeId()) if elem.GetTypeId() else None
+
+def get_room_area(room_elem):
+    if isinstance(room_elem, DB.SpatialElement) and room_elem.Category.Id.IntegerValue == int(DB.BuiltInCategory.OST_Rooms):
+        return room_elem.get_Parameter(DB.BuiltInParameter.ROOM_AREA).AsDouble()
+    
 class ModelLine:
     # def __init__(self, RevitOBJ: ModelLines):
     def __init__(self, RevitOBJ):

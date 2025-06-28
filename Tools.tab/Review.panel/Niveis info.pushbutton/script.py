@@ -27,14 +27,16 @@ try:
 except ValueError:
     forms.alert("Entrada inválida! Por favor, insira um número.", exitscript=False)
 
-
 level_names_and_elevations = {}
 
 for level in interface.levels:
     # level_names_and_elevations[remove_acentos(level.Name).capitalize()] = str(
     #     '{:.2f}'.format(double_to_metric(level.Elevation))
     #     )
-        level_names_and_elevations[remove_acentos(level.Name).capitalize()] = double_to_metric(level.Elevation)
+        level_names_and_elevations[
+            remove_acentos(level.Name)
+            .capitalize()
+        ] = double_to_metric(level.Elevation)
 
         
 sorted_level_names_and_elevations = sorted(level_names_and_elevations.items(), key=operator.itemgetter(1))
