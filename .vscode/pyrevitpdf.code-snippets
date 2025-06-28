@@ -1,0 +1,29 @@
+// This code snippet is for exporting Revit views to PDF using pyRevit.
+{
+  "Exportar vista para PDF": {
+    "prefix": "pyrevitpdf",
+    "body": [
+      "from Autodesk.Revit.DB import *",
+      "from Autodesk.Revit.UI import TaskDialog",
+      "",
+      "uidoc = __revit__.ActiveUIDocument",
+      "doc = uidoc.Document",
+      "",
+      "collector = FilteredElementCollector(doc)",
+      "views = collector.OfClass(ViewSheet).ToElements()",
+      "",
+      "pdf_options = PDFExportOptions()",
+      "pdf_options.FileName = \"${1:output_name}\"",
+      "pdf_options.ExportRange = ExportRange.SetOfViews",
+      "pdf_options.Views = List[ElementId]([v.Id for v in views if not v.IsTemplate])",
+      "",
+      "with Transaction(doc, \"Exportar PDF\") as t:",
+      "    t.Start()",
+      "    doc.Export(\"${2:caminho/de/saida}\", pdf_options.FileName, pdf_options)",
+      "    t.Commit()",
+      "",
+      "TaskDialog.Show(\"Exportar PDF\", \"Exportação concluída com sucesso!\")"
+    ],
+    "description": "Exporta todas as folhas (ViewSheet) para um PDF com nome e pasta definidos."
+  }
+}
