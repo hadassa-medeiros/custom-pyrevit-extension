@@ -1,5 +1,60 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
+import unicodedata
+from pyrevit import revit, forms
+
+uidoc = __revit__.ActiveUIDocument
+doc = __revit__.ActiveUIDocument.Document
+app = doc.Application
+
+
+# about parameters:
+def normalize_param(param_obj):
+    return param_obj.AsString() if param_obj and param_obj.HasValue else None
+
+def get_project_parameter(doc, param_name_or_obj, param_is_builtin = bool):
+    project_info_elem = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_ProjectInformation).FirstElement()
+    campus_or_center = normalize_param(project_info_elem.LookupParameter('NOME CAMPUS/CENTRO'))
+    project_info = DB.FilteredElementCollector(doc).OfClass(DB.ProjectInfo).FirstElement()
+    try:
+        if param_is_builtin:
+            param_obj = param_name_or_obj
+            return project_info.get_Parameter(param_obj).AsValueString()
+        else:
+            param_name = param_name_or_obj
+            return project_info.LookupParameter(param_name).AsValueString()
+    except AttributeError:
+        print('O parametro informado nao foi encontrado no modelo')
+        
+# open shared parameters file if existent
+sp_file = app.OpenSharedParameterFile()
+
+if not sp_file:
+    forms.alert('Shared parameters file was not found, add it and try again.')
+
+dict_shared_params = {}
+for group in sp_file.Groups:
+    for p_def in group.Definitions:
+        combined_name = '{}_{}'.format(group.Name, p_def.Name)
+        dict_shared_params[combined_name] = p_def
+
+
+# pick csv trough forms (to be used in pushbutton to compare data from table to data from model)
+def pick_csv_file():
+    return forms.pick_file(file_ext='csv', multi_file=False)
+
+def remove_acentos(texto):
+    # Normaliza o texto e remove os acentos
+    nfkd_form = unicodedata.normalize('NFKD', texto)
+    return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+def capitalize_string(texto):
+    # Capitaliza cada palavra da string
+    return texto.strip().title()
+
+
+def get_selected_elements(uidoc):
+    return [uidoc.Document.GetElement(elem_id) for elem_id in uidoc.Selection.GetElementIds()] 
 
 def map_cat_to_elements(self, keyword):
     return DB.FilteredElementCollector(self.doc).OfCategory(
@@ -7,7 +62,7 @@ def map_cat_to_elements(self, keyword):
     ).WhereElementIsNotElementType().ToElements()
     
 class RevitDocInterface:
-    def __init__(self, RevitDoc=__revit__.ActiveUIDocument.Document):
+    def __init__(self, RevitDoc=doc):
         self.doc = RevitDoc# self.collector = DB.FilteredElementCollector(RevitDoc)
         self.category_map = {
             # "all_elements": DB.Element
@@ -108,12 +163,17 @@ def get_name(element):
         model_type_name = model_type_param.AsString() if model_type_param else None
         room_name = room_name_param.AsString() if room_name_param else None
 
+        # Prioriza o nome do tipo de modelo
         if model_type_name is not None:
-            return model_type_name
+            name = model_type_name
         elif room_name is not None:
-            return room_name
+            name = room_name
         else:
-            return "Sem nome"  # Nome padrão caso nenhum parâmetro exista
+            name = "Sem nome"  # Nome padrão caso nenhum parâmetro exista
+        
+        # Remove acentos e caracteres especiais, depois capitaliza
+        return capitalize_string(remove_acentos(name))
+    
     return "Elemento inválido"
     
 def get_names(RevitListOfElements):
@@ -131,8 +191,8 @@ def meter_to_double(value_in_meters):
 
 def double_to_metric(value):
     meter_to_double_factor = 3.280840
-    value_in_metric = round(value/meter_to_double_factor, 3)
-    return value_in_metric
+    value_in_metric = value/meter_to_double_factor
+    return round(value_in_metric, 2)
 
 def get_room_number(roomElement):
     return roomElement.get_Parameter(DB.BuiltInParameter.ROOM_NUMBER).AsString()
