@@ -1,46 +1,38 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
 import unicodedata
-from pyrevit import revit, forms, script
+from pyrevit import forms, script
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 app = doc.Application
 
 
-# about parameters:
-# WIP
-def get_elem_param_obj(elem, builtin_or_shared_param):
-        if isinstance(builtin_or_shared_param, DB.BuiltInParameter):
-            elem_param = elem.get_Parameter(builtin_or_shared_param)
-        else:
-            elem_param = elem.LookupParameter(builtin_or_shared_param)
-        return elem_param
+def get_elem_param(elem, builtin_or_shared_param):
+    if isinstance(builtin_or_shared_param, DB.BuiltInParameter):
+        elem_param = elem.get_Parameter(builtin_or_shared_param)
+    else:
+        elem_param = elem.LookupParameter(builtin_or_shared_param)
+    return elem_param
 
-def assign_new_value_to_parameter(elem, param, correct_value):
-    # ver que tipo de objeto e o correct_value (id, nome, numero)
-
-    # print(type(correct_value))
-    # print(isinstance(correct_value, DB.ElementId))
-    elem_param = get_elem_param_obj(elem, param)
+def new_param_value(elem, param, correct_value):
+    elem_param = get_elem_param(elem, param)
     param_value = elem_param.Id
     # print(param_value)
 
-    if type(param_value) == type(correct_value):
-        # print('yess')
-        if param_value != correct_value:
-            t = DB.Transaction(doc, "Correct created phase parameter")
-            t.Start()
-            try:
-                elem_param.Set(correct_value)
-                print(
-                    "{} corrigido (era {})"
-                    .format(elem.Name, param_value)
-                    )
-            except Exception as e:
-                print(e)
-                pass
-            t.Commit()
+    if type(param_value) == type(correct_value) and param_value != correct_value:
+        t = DB.Transaction(doc, "Correct created phase parameter")
+        t.Start()
+        try:
+            elem_param.Set(correct_value)
+            print(
+                "{} corrigido (era {})"
+                .format(elem.Name, param_value)
+                )
+        except Exception as e:
+            print(e)
+            pass
+        t.Commit()
     else:
         print(
               'Os argumentos deveriam ter o mesmo tipo, mas sao {} e {}'.format(
@@ -53,22 +45,19 @@ def normalize_param(param_obj):
 
 def get_project_parameter(doc, param_name_or_obj, param_is_builtin = bool):
     project_info_elem = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_ProjectInformation).FirstElement()
-    campus_or_center = normalize_param(project_info_elem.LookupParameter('NOME CAMPUS/CENTRO'))
-    project_info = DB.FilteredElementCollector(doc).OfClass(DB.ProjectInfo).FirstElement()
+
     try:
         if param_is_builtin:
             param_obj = param_name_or_obj
-            return project_info.get_Parameter(param_obj).AsValueString()
+            return project_info_elem.get_Parameter(param_obj).AsValueString()
         else:
             param_name = param_name_or_obj
-            return project_info.LookupParameter(param_name).AsValueString()
+            return project_info_elem.LookupParameter(param_name).AsValueString()
     except AttributeError:
         print('O parametro informado nao foi encontrado no modelo')
         
 # open shared parameters file if existent
-
 def open_shared_params_file():
-
     sp_file = app.OpenSharedParameterFile()
 
     if not sp_file:
