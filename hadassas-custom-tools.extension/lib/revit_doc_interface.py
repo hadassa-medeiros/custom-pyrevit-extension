@@ -367,6 +367,7 @@ if __name__ == "__main__":
     # print("Linhas: {interface.lines}")
 
 # # this may have some utility:
+
 # rooms = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Rooms)
 
 # for r in rooms:
