@@ -2,12 +2,40 @@
 import Autodesk.Revit.DB as DB
 import unicodedata
 from pyrevit import forms, script
+from custom_forms import CustomInput
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 app = doc.Application
 
+# for selected in get_selected_elements(uidoc):
+    # do smt
+    # return smt
 
+def list_by_name_match(elems_list, keyword):
+    return [
+        e for e in elems_list if any(
+        keyword.lower() in get_name(e).strip().lower() for keyword in [keyword]
+        )
+    ]
+def recolher_input_usuario(prompt_message):
+    win = CustomInput(prompt_message)
+    win.ShowDialog()
+    return win.input_text
+
+for room in interface.rooms:
+    room_area = room.get_Parameter(
+        DB.BuiltInParameter.ROOM_AREA
+        ).AsValueString().split(' ')[0]
+    model_rooms_area_count += float(room_area)
+
+    building_data_from_model = {
+        building_name: {
+            'quantidade de ambientes': len(interface.rooms),
+            # 'quantidade de pavimentos': [level for level in interface.levels if 'Pavimento' in level.Name],
+            'area util total': model_rooms_area_count
+            }
+    }
 def get_elem_param(elem, builtin_or_shared_param):
     if isinstance(builtin_or_shared_param, DB.BuiltInParameter):
         elem_param = elem.get_Parameter(builtin_or_shared_param)
