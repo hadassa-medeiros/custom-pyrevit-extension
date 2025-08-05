@@ -14,17 +14,88 @@ def get_name(elem):
         model_type_name = model_type_param.AsString() if model_type_param else None
         room_name = room_name_param.AsString() if room_name_param else None
 
-        # Prioriza o nome do tipo de modelo
-        if room_name is not None:
-            name = room_name
-        elif elem.Name:
-            name = elem.Name
-        elif model_type_name is not None:
-            name = model_type_name
+        if room_name:
+            return room_name
+        # if elem.Name:
+        #     return elem.Name
+        if model_type_name:
+            return model_type_name
         else:
-            name = "S/N"
-        
-        return name
+            return "S/N"
         # return capitalize_string(remove_acentos(name))
+    return "Invalid element"
 
-    return "elemo inválido"
+class ElementCollections:
+    def __init__(self):
+        self.doc = doc
+        self.category_map = {
+            "walls": DB.BuiltInCategory.OST_Walls,
+            "walltypes": DB.WallType,
+            "floors": DB.BuiltInCategory.OST_Floors,
+            "rooms": DB.BuiltInCategory.OST_Rooms,
+            "ceilings": DB.BuiltInCategory.OST_Ceilings,
+            "lines": DB.BuiltInCategory.OST_Lines,
+            "levels": DB.BuiltInCategory.OST_Levels,
+            "curves": DB.CurveElement,
+            "room_separation_lines": DB.CurveElementFilter(DB.CurveElementType.RoomSeparation),
+            "materials": DB.BuiltInCategory.OST_Materials,
+            "structural_columns": DB.BuiltInCategory.OST_StructuralColumns,
+            "structural_framing": DB.BuiltInCategory.OST_StructuralFraming,
+            "columns": DB.BuiltInCategory.OST_Columns,
+            "windows": DB.BuiltInCategory.OST_Windows,
+            "doors": DB.BuiltInCategory.OST_Doors
+        }
+
+    
+    def map_cat_to_elements(self, keyword):
+        cat = self.category_map.get(keyword)
+        if isinstance(cat, DB.ElementFilter):
+            return DB.FilteredElementCollector(self.doc).WherePasses(cat).WhereElementIsNotElementType().ToElements()
+        elif isinstance(cat, DB.BuiltInCategory):
+            return DB.FilteredElementCollector(self.doc).OfCategory(cat).WhereElementIsNotElementType().ToElements()
+        elif issubclass(cat, DB.Element):
+            return DB.FilteredElementCollector(self.doc).OfClass(cat).WhereElementIsNotElementType().ToElements()
+        else:
+            return []
+        
+    def get_types(self, keyword):
+        cat = self.category_map.get(keyword)
+        return DB.FilteredElementCollector(self.doc).OfCategory(cat).WhereElementIsElementType()
+    
+    def __getattr__(self, name):
+        if name in self.category_map:
+            return self.map_cat_to_elements(name)
+        raise AttributeError('Collection object has no attribute {}'.format(name))
+    
+class ModelLine:
+    def __init__(self, line):
+        self.start_point = line.GeometryCurve.GetEndPoint(0)
+        self.end_point = line.GeometryCurve.GetEndPoint(1)
+        self.style = line.LineStyle.Name
+        self.length = line.GeometryCurve.Length
+        self.sketch_plane = line.SketchPlane.Name
+
+    @property
+    def start_x(self):
+        return round(self.start_point.X, 5)
+    
+    @property
+    def start_y(self):
+        return round(self.start_point.Y, 5)
+    
+    @property
+    def start_z(self):
+        return round(self.start_point.Z, 5)
+
+    @property
+    def end_x(self):
+        return round(self.end_point.X, 5)
+
+    @property
+    def end_y(self):
+        return round(self.end_point.Y, 5)
+    
+    @property
+    def end_z(self):
+        return round(self.end_point.Z, 5)
+    
