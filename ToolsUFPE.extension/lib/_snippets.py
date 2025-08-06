@@ -2,6 +2,46 @@
 import Autodesk.Revit.DB as DB 
 from _base import *
 
+""" 
+def normalize(str):
+
+"""
+
+""" 
+def convert_unit(input):
+
+"""
+
+def set_value(elem, param_name_or_enum, new_value, transaction_name):
+    param = elem.LookupParameter(param_name_or_enum) if isinstance(param_name_or_enum, str) else elem.get_Parameter(param_name_or_enum)
+
+    if not param:
+        print("❌ Parâmetro '{}' não encontrado no elemento.".format(param_name_or_enum))
+        return
+
+    if param.IsReadOnly:
+        print("⚠️ Parâmetro '{}' é somente leitura.".format(param.Definition.Name))
+        return
+
+    try:
+        # Inicia a transação
+        t = DB.Transaction(doc, transaction_name)
+        t.Start()
+
+        # Tenta definir o valor
+        if not param.Set(new_value):
+            print("⚠️ Não foi possível definir o valor de '{}'.".format(param.Definition.Name))
+        
+        t.Commit()
+        print("✅ Parâmetro '{param.Definition.Name}' atualizado com sucesso para {new_value}.")
+
+    except Exception as e:
+        print("❌ Erro ao tentar definir o parâmetro '{}': {}".format(param_name_or_enum, e))
+        if t.HasStarted() and not t.HasEnded():
+            t.RollBack()
+    finally:
+        if t.HasStarted() and not t.HasEnded():
+            t.Commit()
 
 def get_selected():
     return [doc.GetElement(elem_id) for elem_id in uidoc.Selection.GetElementIds()]
@@ -22,8 +62,17 @@ def get_name(elem):
             return model_type_name
         else:
             return "S/N"
-        # return capitalize_string(remove_acentos(name))
+        # return capitalize_string(normalize(name))
     return "Invalid element"
+
+def get_type_name(elem):
+    if isinstance(elem, DB.Element):
+        type_id = elem.GetTypeId()
+        elem_type = doc.GetElement(type_id)
+        elem_type_name = get_name(elem_type)
+        return elem_type_name
+
+    print(elem_type.Name)
 
 class ElementCollections:
     def __init__(self):
