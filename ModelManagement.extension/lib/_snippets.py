@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB 
 from _base import *
+import os, csv
+from pyrevit import forms # pyright: ignore[reportMissingImports]
+
 
 """ 
 def normalize(str):
@@ -11,6 +14,15 @@ def normalize(str):
 def convert_unit(input):
 
 """
+
+
+def order_list(list_to_order, index):
+    return sorted(list_to_order, key=lambda x: (x[index], x[1]))
+
+
+def values_match(value_a, value_b):
+    return value_a == value_b
+
 
 def set_value(elem, param_name_or_enum, new_value, transaction_name):
     param = elem.LookupParameter(param_name_or_enum) if isinstance(param_name_or_enum, str) else elem.get_Parameter(param_name_or_enum)
@@ -30,26 +42,35 @@ def set_value(elem, param_name_or_enum, new_value, transaction_name):
 
         # Tenta definir o valor
         if not param.Set(new_value):
-            print("⚠️ Não foi possível definir o valor de '{}'.".format(param.Definition.Name))
+            print("⚠️ Não foi possível definir o valor de '{}'."
+                  .format(param.Definition.Name))
         
         t.Commit()
-        print("✅ Parâmetro '{param.Definition.Name}' atualizado com sucesso para {new_value}.")
+        print("✅ Parâmetro '{}' atualizado com sucesso para {}."
+              .format(param.Definition.Name, new_value))
 
     except Exception as e:
-        print("❌ Erro ao tentar definir o parâmetro '{}': {}".format(param_name_or_enum, e))
+        print("❌ Erro ao tentar definir o parâmetro '{}': {}"
+              .format(param_name_or_enum, e))
         if t.HasStarted() and not t.HasEnded():
             t.RollBack()
     finally:
         if t.HasStarted() and not t.HasEnded():
             t.Commit()
 
+
 def get_selected():
     return [doc.GetElement(elem_id) for elem_id in uidoc.Selection.GetElementIds()]
 
+
 def get_name(elem):
     if elem is not None:
-        model_type_param = elem.get_Parameter(DB.BuiltInParameter.ALL_MODEL_TYPE_NAME)
-        room_name_param = elem.get_Parameter(DB.BuiltInParameter.ROOM_NAME)
+        model_type_param = elem.get_Parameter(
+            DB.BuiltInParameter.ALL_MODEL_TYPE_NAME
+            )
+        room_name_param = elem.get_Parameter(
+            DB.BuiltInParameter.ROOM_NAME
+            )
         
         model_type_name = model_type_param.AsString() if model_type_param else None
         room_name = room_name_param.AsString() if room_name_param else None
@@ -65,6 +86,7 @@ def get_name(elem):
         # return capitalize_string(normalize(name))
     return "Invalid element"
 
+
 def get_type_name(elem):
     if isinstance(elem, DB.Element):
         type_id = elem.GetTypeId()
@@ -72,7 +94,42 @@ def get_type_name(elem):
         elem_type_name = get_name(elem_type)
         return elem_type_name
 
-    print(elem_type.Name)
+
+def get_element_by_id(elem_id):
+    return doc.GetElement(elem_id)
+
+
+def get_value(elem, param_name_or_enum):
+    param = elem.LookupParameter(param_name_or_enum) if isinstance(param_name_or_enum, str) else elem.get_Parameter(param_name_or_enum)
+    if not param:
+        print("❌ Parâmetro '{}' não encontrado no elemento.".format(param_name_or_enum))
+        return None
+
+    if param.StorageType == DB.StorageType.String:
+        return param.AsString()
+    elif param.StorageType == DB.StorageType.Integer:
+        return param.AsInteger()
+    elif param.StorageType == DB.StorageType.Double:
+        return param.AsDouble()
+    elif param.StorageType == DB.StorageType.ElementId:
+        elem_id = param.AsElementId()
+        if elem_id.IntegerValue != -1:
+            linked_elem = doc.GetElement(elem_id)
+            if linked_elem:
+                return get_name(linked_elem)
+            else:
+                return elem_id.IntegerValue
+        else:
+            return None
+    else:
+        print("⚠️ Tipo de armazenamento desconhecido para o parâmetro '{}'.".format(param.Definition.Name))
+        return None
+
+
+def capitalize_first_word(s):
+    first_word_capitalized = s.split()[0][0].upper() + s.split()[0][1:].lower() if s else ""
+    rest_of_string = " ".join(s.split()[1:]).lower() if len(s.split()) > 1 else ""
+    return first_word_capitalized + (" " + rest_of_string if rest_of_string else "")
 
 class ElementCollections:
     def __init__(self):
@@ -107,9 +164,11 @@ class ElementCollections:
         else:
             return []
         
+
     def get_types(self, keyword):
         cat = self.category_map.get(keyword)
         return DB.FilteredElementCollector(self.doc).OfCategory(cat).WhereElementIsElementType()
+    
     
     def __getattr__(self, name):
         if name in self.category_map:
@@ -148,3 +207,46 @@ class ModelLine:
     def end_z(self):
         return round(self.end_point.Z, 5)
     
+
+def pick_csv():
+    path = forms.pick_file(
+        file_ext='csv',
+        multi_file=False,
+        restore_dir=True,
+        init_dir=os.path.join(os.path.expanduser('~'), 'Desktop')
+    )
+    return path
+
+
+def pick_xlsx():
+    path = forms.pick_file(
+        file_ext='xlsx',
+        multi_file=False,
+        restore_dir=True,
+        init_dir=os.path.join(os.path.expanduser('~'))
+    )
+    return path
+
+
+def read_csv_rows(path, delimiter=None):
+    with open(path, 'r') as f:
+        sample = f.read(4096)
+        f.seek(0)
+        if not delimiter:
+            try:
+                dialect = csv.Sniffer().sniff(sample, delimiters=';,')
+                delimiter = dialect.delimiter
+            except Exception:
+                delimiter = ';'
+        reader = csv.reader(f, delimiter=delimiter)
+        rows = list(reader)
+    return rows
+
+
+def ask_for_text_input():
+    input = forms.ask_for_string(
+        default='some-tag',
+        prompt='Enter new tag name:',
+        title='Tag Manager'
+    )
+    return input

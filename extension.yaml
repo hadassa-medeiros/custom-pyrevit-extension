@@ -1,0 +1,9 @@
+type: extension
+rocket_mode_compatible: true
+name: Model Management
+description: A Revit add-in to audit and clean Revit models.
+version: 1.0.0
+author: Hadassa Medeiros
+author_profile: https://linkedin.com/in/hadassamedeiros/ # [optional] a link to your profile
+url: https://github.com/haudacia/
+website: http://hadassa.dev # [optional] a link to your website
