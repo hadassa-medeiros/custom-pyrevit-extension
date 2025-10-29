@@ -1,5 +1,5 @@
-# from _base import * # pyright: ignore[reportMissingImports]
-# import _snippets as sn # pyright: ignore[reportMissingImports]
+# from _base import *
+# import _snippets as sn
 # import csv
 
 # __title__  = "Generate Report"

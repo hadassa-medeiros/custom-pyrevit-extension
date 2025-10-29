@@ -2,7 +2,7 @@
 import Autodesk.Revit.DB as DB 
 from _base import *
 import os, csv
-from pyrevit import forms # pyright: ignore[reportMissingImports]
+from pyrevit import forms
 
 
 """ 
@@ -36,11 +36,9 @@ def set_value(elem, param_name_or_enum, new_value, transaction_name):
         return
 
     try:
-        # Inicia a transação
         t = DB.Transaction(doc, transaction_name)
         t.Start()
 
-        # Tenta definir o valor
         if not param.Set(new_value):
             print("⚠️ Não foi possível definir o valor de '{}'."
                   .format(param.Definition.Name))

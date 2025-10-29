@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-import _snippets as sn # pyright: ignore[reportMissingImports]
+import _snippets as sn
 
 import Autodesk.Revit.DB as db
 
@@ -20,7 +20,7 @@ c = sn.ElementCollections()
 
 def chose_ref_level():
     levels_data = [(level.get_Parameter(db.BuiltInParameter.DATUM_TEXT).AsString(), level.Elevation, level.Id) for level in c.levels]
-    levels_ordered_by_elevation_ascending = order_list(levels_data, 1)
+    levels_ordered_by_elevation_ascending = sn.order_list(levels_data, 1)
     levels_names = [name for name, elevation, id in levels_ordered_by_elevation_ascending]
     # user choses by name, selected returns level id:
     selected = forms.CommandSwitchWindow.show(levels_names, message='Select a level')
