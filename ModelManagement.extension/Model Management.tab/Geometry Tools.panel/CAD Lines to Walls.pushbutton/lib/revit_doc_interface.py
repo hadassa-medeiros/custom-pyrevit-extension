@@ -68,7 +68,6 @@ def get_project_parameter(doc, param_name_or_obj, param_is_builtin = bool):
 # open shared parameters file if existent
 
 def open_shared_params_file():
-
     sp_file = app.OpenSharedParameterFile()
 
     if not sp_file:
@@ -285,16 +284,6 @@ def get_names(RevitListOfElements):
 def get_element(RevitListOfElements):
     elements_list = [element for element in RevitListOfElements]
     return elements_list[0]
-
-def metric_to_double(value_in_meters):
-    meter_to_double_factor = 3.280840
-    value_in_double = round(value_in_meters * meter_to_double_factor, 5)
-    return value_in_double
-
-def double_to_metric(value):
-    meter_to_double_factor = 3.280840
-    value_in_metric = value/meter_to_double_factor
-    return round(value_in_metric, 2)
 
 def get_room_number(roomElement):
     return roomElement.get_Parameter(DB.BuiltInParameter.ROOM_NUMBER).AsString()
