@@ -32,7 +32,6 @@ def correct_elem_phase(elem, elem_phase_created_param_obj, target_phase_created_
 
 def review_phase_created(target_phase_created_name):
     target_phase_created_id = get_phase_id_by_name(target_phase_created_name)
-    
     elems_in_incorrect_phase = {}
 
     for elem in filter_elems_with_phase_created_param():
