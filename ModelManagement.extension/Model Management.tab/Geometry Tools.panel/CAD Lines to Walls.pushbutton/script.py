@@ -81,34 +81,68 @@ def create_walltype_whith_one_layer_and_given_thickness(thickness_in_meters):
     
 
 wt = create_walltype_whith_one_layer_and_given_thickness(.4)
-# print(wt)
-# def create_wall(startpoint, endpoint, wall_type=wt):
-#     curve = db.Line.CreateBound(startpoint, endpoint)
-#     # db.Wall.Create(doc, curve, activeLevel.Id, False)
-#     # Parameters for more controlled overload):
-#     altura = convert.m_to_ft(2)
-#     offset = 0
-#     flip = False
-#     struct = False
 
-#     wall = db.Wall.Create(
-#     doc,
-#     curve,
-#     wall_type.Id,
-#     activeLevel.Id,
-#     altura,
-#     offset,
-#     flip,
-#     struct
-# )
-#     wall_location_line = wall.get_Parameter(db.BuiltInParameter.WALL_KEY_REF_PARAM)
-#     wall_location_line.Set(1) 
+def get_existing_walls():
+    return db.FilteredElementCollector(doc).OfCategory(
+        db.BuiltInCategory.OST_Walls
+    ).WhereElementIsNotElementType().ToElements()
 
-#     return wall 
-# vertical_pairs = []
+def wall_exists_at_location(curve, tolerance=0.1):
+    """Verifica se já existe uma parede sobre (ou muito próxima de) a curva informada."""
+    new_start = curve.GetEndPoint(0)
+    new_end = curve.GetEndPoint(1)
+    new_mid = curve.Evaluate(0.5, True)
 
-# def lines_represent_a_wall(distance_between_lines):
-#     return distance_between_lines_is_acceptable(distance_between_lines)
+    for wall in get_existing_walls():
+        loc = wall.Location
+        if not isinstance(loc, db.LocationCurve):
+            continue
+        ex_curve = loc.Curve
+        ex_start = ex_curve.GetEndPoint(0)
+        ex_end = ex_curve.GetEndPoint(1)
+        ex_mid = ex_curve.Evaluate(0.5, True)
+
+        if new_mid.DistanceTo(ex_mid) > tolerance:
+            continue
+
+        endpoints_match = (
+            (new_start.DistanceTo(ex_start) < tolerance and new_end.DistanceTo(ex_end) < tolerance)
+            or (new_start.DistanceTo(ex_end) < tolerance and new_end.DistanceTo(ex_start) < tolerance)
+        )
+        if endpoints_match:
+            return True
+    return False
+
+def create_wall(startpoint, endpoint, wall_type=wt):
+    curve = db.Line.CreateBound(startpoint, endpoint)
+
+    if wall_exists_at_location(curve):
+        print("Parede ja existe nesta localizacao, pulando criacao. (curva: {} -> {})".format(startpoint, endpoint))
+        return None
+
+    altura = convert.m_to_ft(2)
+    offset = 0
+    flip = False
+    struct = False
+
+    wall = db.Wall.Create(
+        doc,
+        curve,
+        wall_type.Id,
+        activeLevel.Id,
+        altura,
+        offset,
+        flip,
+        struct
+    )
+    wall_location_line = wall.get_Parameter(db.BuiltInParameter.WALL_KEY_REF_PARAM)
+    wall_location_line.Set(1)
+    return wall
+
+vertical_pairs = []
+
+def lines_represent_a_wall(distance_between_lines):
+    return distance_between_lines_is_acceptable(distance_between_lines)
 
 # if vertical_lines:
 #     i = 0
