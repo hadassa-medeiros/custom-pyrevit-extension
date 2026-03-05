@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from lib import RoomManager
+from room_manager import RoomManager
 
 doc = __revit__.ActiveUIDocument.Document
 

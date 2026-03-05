@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import Autodesk.Revit.DB as DB
 from pyrevit import forms
-from lib import RoomManager
+from room_manager import RoomManager
 
 doc = __revit__.ActiveUIDocument.Document
 

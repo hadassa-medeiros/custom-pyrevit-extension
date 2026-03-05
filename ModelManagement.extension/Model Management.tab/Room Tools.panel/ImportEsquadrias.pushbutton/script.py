@@ -8,7 +8,7 @@ Formato CSV esperado (com header):
     P1,0.90,2.10
 """
 from pyrevit import forms
-from lib import CADToRevitMigrator
+from cad_to_revit_migrator import CADToRevitMigrator
 
 doc = __revit__.ActiveUIDocument.Document
 
