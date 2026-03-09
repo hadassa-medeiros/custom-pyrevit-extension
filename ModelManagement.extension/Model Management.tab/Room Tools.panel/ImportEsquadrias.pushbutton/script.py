@@ -25,7 +25,6 @@ else:
     if not migrator.esquadrias:
         forms.alert("O CSV nao contem esquadrias validas (esperado colunas: Codigo, Largura, Altura).")
     else:
-        print("Esquadrias encontradas no CSV: {}".format(len(migrator.esquadrias)))
-        print("Criando tipos...\n")
+        forms.alert("Esquadrias encontradas no CSV: {}".format(len(migrator.esquadrias)))
         created = migrator.create_all_types()
-        print("\nProcesso finalizado.")
+        forms.alert("Processo finalizado. {} tipos criados: {}".format(len(created), ", ".join(created.keys())))
