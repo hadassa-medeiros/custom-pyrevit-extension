@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+import clr
 import csv
+import codecs
 import Autodesk.Revit.DB as DB
 from pyrevit import forms
 
@@ -60,7 +62,7 @@ class CADToRevitMigrator:
         Colunas esperadas: Codigo, Largura, Altura (metros).
         """
         esquadrias = []
-        with open(path, mode="r", encoding="utf-8") as f:
+        with codecs.open(path, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 codigo = row.get("Codigo", "").strip()
@@ -111,9 +113,10 @@ class CADToRevitMigrator:
         if not rfa_path:
             return None
 
-        # doc.LoadFamily retorna (bool, Family) em IronPython
-        loaded_family = DB.Document.LoadFamily.Overloads[str](self.doc, rfa_path)
-        if not loaded_family:
+        # IronPython: LoadFamily com out parameter via clr.Reference
+        family_ref = clr.Reference[DB.Family]()
+        loaded = self.doc.LoadFamily(rfa_path, family_ref)
+        if not loaded:
             print("ERRO: nao foi possivel carregar '{}'.".format(rfa_path))
             return None
 
