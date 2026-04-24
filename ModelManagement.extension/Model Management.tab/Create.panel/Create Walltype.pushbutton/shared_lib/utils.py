@@ -9,4 +9,4 @@ class Convert:
 
 def cleanup_str(str):
     return cleanup_str.strip.upper()
-    
+

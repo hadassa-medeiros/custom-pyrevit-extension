@@ -77,5 +77,3 @@ def review_phase_created(target_phase_created_name):
             forms.alert("Fases corrigidas com sucesso.", title="Concluído")
         else:
             forms.alert("Nenhuma alteração foi feita.", title="Cancelado")
-
-review_phase_created("LEVANTAMENTO")

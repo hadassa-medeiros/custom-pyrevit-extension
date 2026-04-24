@@ -14,6 +14,14 @@ from .cad_lines_to_walls import (
     get_shortest_line,
 )
 
+from .Phases import (
+    get_phase_created,
+    get_phase_id_by_name,
+    filter_elems_with_phase_created_param,
+    correct_elem_phase,
+    review_phase_created
+)
+
 __all__ = [
     'Convert',
     'Model',
